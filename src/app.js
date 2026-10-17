@@ -121,7 +121,15 @@ async function loginSubmit(form){
  try{
   let result;
   if(STATE.mode==='login')result=await STATE.supabase.auth.signInWithPassword({email,password});
-  else if(STATE.mode==='register')result=await STATE.supabase.auth.signUp({email,password,options:{data:{full_name:fullName}}});
+  else if(STATE.mode==='register')
+  result=await STATE.supabase.auth.signUp({
+    email,
+    password,
+    options:{
+      data:{full_name:fullName},
+      emailRedirectTo:location.origin+location.pathname
+    }
+  });
   else if(STATE.mode==='forgot')result=await STATE.supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
   else result=await STATE.supabase.auth.updateUser({password});
   if(result.error)throw result.error;
