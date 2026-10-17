@@ -1,4 +1,5 @@
 import { CONFIG } from '../config.js';
+import { createCareerModule } from './career.js?v=0.2.0';
 
 const ROOT = document.getElementById('app');
 const TOAST = document.getElementById('toast');
@@ -12,7 +13,7 @@ const preferredTheme=THEME_MODES.includes(savedTheme)?savedTheme:'system';
 const systemDark=()=>window.matchMedia?.('(prefers-color-scheme: dark)').matches??false;
 const FONT_SCALES=[1,1.1,1.2];
 const storedScale=Number(localStorage.getItem('ikhtiar:font-scale'));
-const STATE = {view:'splash', slide:0, mode:'login', session:null, supabase:null, authReady:false, splashDone:false, authError:'', authNotice:'', passwordVisible:false, busy:false, resendEmail:'', resendAt:0, logoutDialog:false, logoutScope:'local', busyLogout:false, localLogoutInProgress:false, sessionCheckAt:0, sessionChecking:false, demo:false, themeMode:preferredTheme, dark:preferredTheme==='dark'||(preferredTheme==='system'&&systemDark()), fontScale:FONT_SCALES.includes(storedScale)?storedScale:1, settingSection:'profile', adminSection:'platform', role:'user', roleReady:false, roleRequest:0, platformNotice:'', platformReady:false, platformBusy:false, profileBusy:false, passwordBusy:false, adminUsers:[], adminUsersTotal:0, adminUsersSearch:'', adminUsersPage:0, adminUsersBusy:false, adminUsersLoaded:false, adminUsersError:'', adminAudit:[], adminAuditBusy:false, adminAuditLoaded:false, adminAuditError:'', adminRoleDialog:null, adminRoleBusy:false};
+const STATE = {view:'splash', slide:0, mode:'login', session:null, supabase:null, authReady:false, splashDone:false, authError:'', authNotice:'', passwordVisible:false, busy:false, resendEmail:'', resendAt:0, logoutDialog:false, logoutScope:'local', busyLogout:false, localLogoutInProgress:false, sessionCheckAt:0, sessionChecking:false, demo:false, themeMode:preferredTheme, dark:preferredTheme==='dark'||(preferredTheme==='system'&&systemDark()), fontScale:FONT_SCALES.includes(storedScale)?storedScale:1, settingSection:'profile', adminSection:'platform', role:'user', roleReady:false, roleRequest:0, platformNotice:'', platformReady:false, platformBusy:false, profileBusy:false, passwordBusy:false, adminUsers:[], adminUsersTotal:0, adminUsersSearch:'', adminUsersPage:0, adminUsersBusy:false, adminUsersLoaded:false, adminUsersError:'', adminAudit:[], adminAuditBusy:false, adminAuditLoaded:false, adminAuditError:'', adminRoleDialog:null, adminRoleBusy:false, careerProfile:null};
 const slides = [
   {tag:'01 · SHOW YOUR WORK',title:'Tunjukkan karya. <span class="grad-text">Buka peluang.</span>',desc:'Bangun portofolio profesional yang terasa seperti dirimu. Tampilkan proyek, skill, dan pencapaian melalui satu tautan yang mudah dibagikan.',top:'Portofolio Online',bottom:'Karyamu, identitasmu',caption:'Perjalanan besar dimulai dari karya kecil yang kamu banggakan.'},
   {tag:'02 · BUILT FOR YOUR CAREER',title:'CV profesional, <span class="grad-text">lebih mudah.</span>',desc:'Susun CV ATS-friendly dari profil yang sama. Pilih template minimalis, lihat pratinjau langsung, dan siapkan dokumen untuk peluang berikutnya.',top:'CV ATS Ready',bottom:'Format yang lebih rapi',caption:'Bukan sekadar terlihat bagus — informasi penting juga harus mudah ditemukan.'},
@@ -20,13 +21,18 @@ const slides = [
 ];
 function toast(message){ TOAST.textContent=message;TOAST.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>TOAST.classList.remove('show'),3500); }
 function isAdmin(){return !STATE.demo&&!!STATE.session&&STATE.roleReady&&STATE.role==='super_admin';}
+const career=createCareerModule({state:STATE,render,toast,go,icon,escapeHTML,getUser:userInfo});
 function go(view){
+ if(STATE.view==='career'&&view!=='career'&&STATE.session&&career.hasUnsaved()){
+  if(!window.confirm('Profil belum disimpan. Tinggalkan halaman dan batalkan perubahan?'))return;
+ }
  if(view==='admin-settings'&&!isAdmin())view='settings';
- if(['dashboard','settings','admin-settings'].includes(view)&&!STATE.session&&!STATE.demo)view='auth';
+ if(['dashboard','settings','admin-settings','career','cv'].includes(view)&&!STATE.session&&!STATE.demo)view='auth';
  STATE.view=view;
  location.hash=`/${view}`;
  render();
  window.scrollTo(0,0);
+ if(view==='career'||view==='cv')career.open(view);
  if(view==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();}
 }
 function setTheme(mode){
@@ -53,7 +59,7 @@ async function loadRole(userId){
   if(STATE.session?.user?.id===userId&&request===STATE.roleRequest){
    STATE.roleReady=true;
    if(STATE.view==='admin-settings'&&!isAdmin())go('settings');
-   else if(['dashboard','settings','admin-settings'].includes(STATE.view))render();
+   else if(['dashboard','settings','admin-settings','career','cv'].includes(STATE.view))render();
   }
  }
 }
@@ -77,7 +83,7 @@ function startRoute(){
  if(STATE.session){
   STATE.demo=false;
   const requested=location.hash.replace(/^#\//,'').split('?')[0];
-  go(['settings','admin-settings'].includes(requested)?requested:'dashboard');
+  go(['settings','admin-settings','career','cv'].includes(requested)?requested:'dashboard');
   return;
  }
  const requested=location.hash.replace(/^#\//,'').split('?')[0];
@@ -96,10 +102,13 @@ async function authInit(){
   supabase.auth.onAuthStateChange((event,session)=>{
     const previousSession=STATE.session;
     STATE.session=session;
+    if(session&&previousSession?.user?.id&&previousSession.user.id!==session.user.id)career.clear();
     if(event==='SIGNED_IN'&&session){
       // Schedule asynchronous database access outside the Auth callback.
       Promise.resolve().then(()=>loadRole(session.user.id));
       Promise.resolve().then(()=>loadPlatformSettings());
+      Promise.resolve().then(()=>career.load());
+      Promise.resolve().then(()=>career.loadVersions());
     }
     if(event==='PASSWORD_RECOVERY'){
       STATE.logoutDialog=false;
@@ -109,7 +118,7 @@ async function authInit(){
     }
     if(event==='SIGNED_OUT'){
       ++STATE.roleRequest;STATE.role='user';STATE.roleReady=false;STATE.platformNotice='';STATE.platformReady=false;
-      STATE.adminUsers=[];STATE.adminUsersLoaded=false;STATE.adminUsersError='';STATE.adminAudit=[];STATE.adminAuditLoaded=false;STATE.adminAuditError='';STATE.adminRoleDialog=null;
+      STATE.adminUsers=[];STATE.adminUsersLoaded=false;STATE.adminUsersError='';STATE.adminAudit=[];STATE.adminAuditLoaded=false;STATE.adminAuditError='';STATE.adminRoleDialog=null;career.clear();
       const intentional=STATE.localLogoutInProgress;
       STATE.logoutDialog=false;STATE.adminRoleDialog=null;
       STATE.busyLogout=false;
@@ -132,7 +141,7 @@ async function authInit(){
   const {data,error}=await supabase.auth.getSession();
   if(error) throw error;
   STATE.session=data.session;
-  if(STATE.session){await loadRole(STATE.session.user.id);await loadPlatformSettings();}
+  if(STATE.session){await loadRole(STATE.session.user.id);await loadPlatformSettings();await career.load();career.loadVersions();}
  }catch(err){STATE.authError='Tidak dapat menghubungkan layanan login. Periksa koneksi internet dan konfigurasi Supabase.';console.warn('IKHTIAR auth initialization:',err?.message||err);}
  STATE.authReady=true;startRoute();
 }
@@ -221,39 +230,39 @@ function auth(){const isLogin=STATE.mode==='login';const isRegister=STATE.mode==
  <button class="btn btn-quiet btn-wide" data-action="view-demo" style="margin-top:15px">${icon('eye')} Lihat Dashboard Demo ${icon('arrow-right')}</button>
  </div><footer class="auth-foot">Prototype Foundation v0.1. Kebijakan privasi dan syarat layanan disiapkan sebelum rilis publik.<br>Mode demo tidak menyimpan data pengguna.</footer></section></main>`;
 }
-function userInfo(){const u=STATE.session?.user;let email=u?.email||'';let meta=u?.user_metadata||{};let name=STATE.demo?'Pengguna Demo':(meta.full_name||meta.name||meta.display_name||email.split('@')[0]||'Pengguna IKHTIAR');return {name,email:STATE.demo?'Akun simulasi · tanpa data asli':email, initials:String(name).trim().slice(0,1).toUpperCase()||'I'};}
+function userInfo(){const u=STATE.session?.user;let email=u?.email||'';let meta=u?.user_metadata||{};let name=STATE.demo?'Pengguna Demo':(STATE.careerProfile?.full_name||meta.full_name||meta.name||meta.display_name||email.split('@')[0]||'Pengguna IKHTIAR');return {name,email:STATE.demo?'Akun simulasi · tanpa data asli':email, initials:String(name).trim().slice(0,1).toUpperCase()||'I'};}
 function navAction(type,title,ic,isActive=false){
- const action=type==='dashboard'?'nav-dashboard':type==='settings'?'nav-settings':type==='admin-settings'?'nav-admin-settings':'placeholder';
+ const action=type==='dashboard'?'nav-dashboard':type==='settings'?'nav-settings':type==='admin-settings'?'nav-admin-settings':type==='career'?'nav-career':type==='cv'?'nav-cv':'placeholder';
  return `<button class="nav-item ${isActive?'active':''}" data-action="${action}" ${action==='placeholder'?`data-label="${escapeHTML(title)}"`:''} ${isActive?'aria-current="page"':''}>${icon(ic)} ${title}</button>`;
 }
-function dashboard(){const u=userInfo();const sample=STATE.demo;const count=sample?[3,1,12]:[0,0,0];const progress=sample?75:0;const displayName=escapeHTML(u.name);const showingSettings=STATE.view==='settings'||STATE.view==='admin-settings';
+function dashboard(){const u=userInfo();const sample=STATE.demo;const count=sample?[3,1,12]:[0,career.cvCount(),0];const progress=sample?75:career.status().progress;const displayName=escapeHTML(u.name);const showingSettings=['settings','admin-settings','career','cv'].includes(STATE.view);
  return `<main class="dashboard ${STATE.dark?'dark':''}" style="--ik-font-mul:${STATE.fontScale}">
  <aside class="sidebar" aria-label="Navigasi dashboard">${brand(true)}<div class="nav-label">WORKSPACE</div>
- ${navAction('dashboard','Beranda','home',!showingSettings)}${navAction('portfolio','Portofolio','folder')}${navAction('cv','CV ATS','file')}${navAction('job','Cari Lowongan','briefcase')}${navAction('applications','Lamaran Saya','bookmark')}
+ ${navAction('dashboard','Beranda','home',STATE.view==='dashboard')}${navAction('career','Profil Karier','user',STATE.view==='career')}${navAction('portfolio','Portofolio','folder')}${navAction('cv','CV ATS','file',STATE.view==='cv')}${navAction('job','Cari Lowongan','briefcase')}${navAction('applications','Lamaran Saya','bookmark')}
  <div class="nav-label" style="padding-top:17px">AKUN</div>${navAction('settings','Pengaturan','settings',STATE.view==='settings')}
  ${isAdmin()?`<div class="nav-label" style="padding-top:17px">ADMINISTRASI</div>${navAction('admin-settings','Panel Super Admin','shield',STATE.view==='admin-settings')}`:''}
- <div class="side-spacer"></div><div class="side-tip"><strong>Karier yang baik dimulai dari langkah kecil ✦</strong><p>Bangun profilmu dan tunjukkan karya terbaik.</p><button class="btn btn-primary" data-action="placeholder" data-label="Career Profile">Mulai Perjalanan ${icon('arrow-right')}</button></div>
+ <div class="side-spacer"></div><div class="side-tip"><strong>Karier yang baik dimulai dari langkah kecil ✦</strong><p>Bangun profilmu dan tunjukkan karya terbaik.</p><button class="btn btn-primary" data-action="nav-career">Mulai Perjalanan ${icon('arrow-right')}</button></div>
  <div class="sidebar-user"><div class="avatar">${escapeHTML(u.initials)}</div><div style="min-width:0"><strong>${displayName}</strong><small>${sample?'Demo Workspace':'Pengguna IKHTIAR'}</small></div></div>
  </aside>
  <div class="dashboard-main"><header class="dashboard-topbar"><div class="top-search">${icon('search')} Cari lowongan, perusahaan, atau kata kunci...</div><div class="top-mobile-logo">${brand()}</div>
  <div class="top-actions"><button class="icon-btn" data-action="toggle-theme" title="Ganti tema" aria-label="Ganti tema">${icon(STATE.dark?'sun':'moon')}</button><button class="icon-btn" data-action="placeholder" data-label="Notifikasi" aria-label="Notifikasi">${icon('bell')}</button><div class="top-profile"><div class="top-avatar">${escapeHTML(u.initials)}</div><div><strong>${displayName}</strong><small>${sample?'Mode Demo':'Akun Aktif'}</small></div></div><button class="icon-btn" data-action="logout" title="Keluar" aria-label="Keluar">${icon('log-out')}</button></div></header>
- <div class="dashboard-content">${showingSettings ? settingsPage() : `<div class="welcome"><div><h1>Halo, ${displayName}! <span aria-hidden="true">👋</span></h1><p>Langkah kecil hari ini bisa membuka peluang besar esok nanti.</p></div><div class="date-pill">${icon('calendar')} ${new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric'}).format(new Date())}</div></div>
+ <div class="dashboard-content">${showingSettings ? (['career','cv'].includes(STATE.view)?career.page():settingsPage()) : `<div class="welcome"><div><h1>Halo, ${displayName}! <span aria-hidden="true">👋</span></h1><p>Langkah kecil hari ini bisa membuka peluang besar esok nanti.</p></div><div class="date-pill">${icon('calendar')} ${new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric'}).format(new Date())}</div></div>
  ${STATE.platformNotice&&!sample?`<div class="ik-platform-banner">${icon('info')} <span>${escapeHTML(STATE.platformNotice)}</span></div>`:''}
  ${sample?`<div class="demo-alert">${icon('info')} <span><b>Dashboard demo.</b> Semua angka, aktivitas, dan lowongan di bawah hanya contoh. Tidak ada akun yang sedang login.</span></div>`:''}
  <div class="dashboard-grid"><div class="main-stack">
- <section class="panel progress-panel"><div class="progress-circle" style="--p:${progress}%" data-progress="${progress}%"></div><div class="progress-copy"><h2>Progres Profil Kamu</h2><p>${sample?'Profilmu sudah 75% lengkap. Lengkapi agar recruiter lebih mengenalmu.':'Profil kariermu belum dilengkapi. Mulai dari informasi dasar untuk menyiapkan CV dan portofolio.'}</p><button class="text-btn" data-action="placeholder" data-label="Career Profile">Lengkapi profil ${icon('arrow-right')}</button></div></section>
+ <section class="panel progress-panel"><div class="progress-circle" style="--p:${progress}%" data-progress="${progress}%"></div><div class="progress-copy"><h2>Progres Profil Kamu</h2><p>${sample?'Profilmu sudah 75% lengkap. Lengkapi agar recruiter lebih mengenalmu.':progress?`Profil tersimpan ${progress}% lengkap. Satu profil ini dapat dipakai di berbagai lamaran.`:'Mulai isi data utama satu kali untuk menyiapkan CV dan portofolio.'}</p><button class="text-btn" data-action="nav-career">${progress===100?'Lihat profil':'Lengkapi profil'} ${icon('arrow-right')}</button></div></section>
  <div class="stat-grid"><div class="stat"><div class="stat-top"><span class="stat-icon mint">${icon('folder')}</span></div><strong>${count[0]}</strong><small>Total Proyek</small></div><div class="stat"><span class="stat-icon">${icon('file')}</span><strong>${count[1]}</strong><small>CV Dibuat</small></div><div class="stat"><span class="stat-icon violet">${icon('bookmark')}</span><strong>${count[2]}</strong><small>Loker Disimpan</small></div></div>
  <section class="panel"><div class="panel-head"><h2>Aksi Cepat</h2><span>Mulai dari sini</span></div><div class="quick-grid">
- ${[['folder','Buat Portofolio','Tampilkan karya terbaikmu','mint'],['file','Buat CV ATS','CV profesional untuk melamar',''],['briefcase','Cari Lowongan','Jelajahi peluang baru','violet']].map(row=>`<button class="quick-card" data-action="placeholder" data-label="${row[1]}"><span class="stat-icon ${row[3]}">${icon(row[0])}</span><strong>${row[1]}</strong><small>${row[2]}</small></button>`).join('')}</div></section>
+ ${[['folder','Buat Portofolio','Tampilkan karya terbaikmu','mint'],['file','Buat CV ATS','Satu profil untuk banyak perusahaan',''],['briefcase','Cari Lowongan','Jelajahi peluang baru','violet']].map(row=>`<button class="quick-card" data-action="${row[1]==='Buat CV ATS'?'nav-cv':'placeholder'}" data-label="${row[1]}"><span class="stat-icon ${row[3]}">${icon(row[0])}</span><strong>${row[1]}</strong><small>${row[2]}</small></button>`).join('')}</div></section>
  <section class="panel"><div class="panel-head"><h2>Rekomendasi Lowongan</h2><button data-action="placeholder" data-label="Job Explorer">Lihat semua →</button></div>
  ${sample?`<div class="job-row"><div class="job-logo">UI</div><div class="job-info"><strong>UI/UX Designer (Junior)</strong><small>Perusahaan Contoh · Jakarta / Hybrid</small></div><span class="job-type">Full-time</span></div><div class="job-row"><div class="job-logo mint">FE</div><div class="job-info"><strong>Frontend Developer</strong><small>Perusahaan Contoh · Remote</small></div><span class="job-type">Remote</span></div><div class="job-row"><div class="job-logo violet">CC</div><div class="job-info"><strong>Content Creator</strong><small>Perusahaan Contoh · Bandung</small></div><span class="job-type">Part-time</span></div>`:`<div class="notice-empty">Lowongan akan muncul di sini setelah modul Job Explorer tersedia. Tidak ada data lowongan yang ditampilkan sebagai fakta.</div>`}
  </section></div>
- <div class="aside-stack"><section class="panel profile-card"><div class="top-avatar">${escapeHTML(u.initials)}</div><h2>${displayName}</h2><p>${escapeHTML(u.email)}</p><button class="btn btn-outline" data-action="placeholder" data-label="Profil Saya">${icon('user')} Edit Profil</button></section>
+ <div class="aside-stack"><section class="panel profile-card"><div class="top-avatar">${escapeHTML(u.initials)}</div><h2>${displayName}</h2><p>${escapeHTML(u.email)}</p><button class="btn btn-outline" data-action="nav-career">${icon('user')} Edit Profil</button></section>
  <section class="panel"><div class="panel-head"><h2>Aktivitas Terbaru</h2><span>${sample?'Contoh':'Pribadi'}</span></div>
- ${sample?`<div class="activity"><span class="activity-icon">${icon('folder')}</span><div><strong>Portofolio kamu dipublikasikan</strong><small>2 jam yang lalu</small></div></div><div class="activity"><span class="activity-icon">${icon('file')}</span><div><strong>CV baru berhasil dibuat</strong><small>1 hari yang lalu</small></div></div><div class="activity"><span class="activity-icon">${icon('briefcase')}</span><div><strong>Menyimpan lowongan menarik</strong><small>3 hari yang lalu</small></div></div>`:`<div class="notice-empty">Aktivitas akunmu nantinya akan tercatat di bagian ini.</div>`}</section>
- <section class="journey">${icon('sparkles')}<h3>Your Career, Your Move.</h3><p>Satu profil, banyak peluang. Terus kembangkan dirimu dan siapkan langkah berikutnya.</p><button class="btn btn-white" data-action="placeholder" data-label="Career Profile">Mulai sekarang ${icon('arrow-right')}</button></section></div></div>`}
+ ${sample?`<div class="activity"><span class="activity-icon">${icon('folder')}</span><div><strong>Portofolio kamu dipublikasikan</strong><small>2 jam yang lalu</small></div></div><div class="activity"><span class="activity-icon">${icon('file')}</span><div><strong>CV baru berhasil dibuat</strong><small>1 hari yang lalu</small></div></div><div class="activity"><span class="activity-icon">${icon('briefcase')}</span><div><strong>Menyimpan lowongan menarik</strong><small>3 hari yang lalu</small></div></div>`:career.latestCV()?`<div class="activity"><span class="activity-icon">${icon('file')}</span><div><strong>CV untuk ${escapeHTML(career.latestCV().company_name)} dibuat</strong><small>${escapeHTML(career.latestCV().position_name)} · tersimpan di akun</small></div></div><button class="text-btn" data-action="nav-cv">Lihat CV ${icon('arrow-right')}</button>`:`<div class="notice-empty">Buat CV pertamamu dari Profil Karier untuk memulai aktivitas.</div>`}</section>
+ <section class="journey">${icon('sparkles')}<h3>Your Career, Your Move.</h3><p>Satu profil, banyak peluang. Terus kembangkan dirimu dan siapkan langkah berikutnya.</p><button class="btn btn-white" data-action="nav-career">Mulai sekarang ${icon('arrow-right')}</button></section></div></div>`}
  </div></div>
- <nav class="bottom-nav" aria-label="Navigasi bawah">${[['home','Beranda','nav-dashboard'],['briefcase','Loker','placeholder'],['file','CV','placeholder'],['settings','Pengaturan','nav-settings']].map(([ic,label,act],idx)=>`<button class="${act==='nav-dashboard'&&STATE.view==='dashboard'||act==='nav-settings'&&STATE.view==='settings'?'active':''}" data-action="${act}" ${act==='placeholder'?`data-label="${label}"`:''}>${icon(ic)}${label}</button>`).join('')}</nav></main>`;
+ <nav class="bottom-nav" aria-label="Navigasi bawah">${[['home','Beranda','nav-dashboard'],['user','Profil','nav-career'],['file','CV','nav-cv'],['settings','Pengaturan','nav-settings']].map(([ic,label,act],idx)=>`<button class="${act==='nav-dashboard'&&STATE.view==='dashboard'||act==='nav-settings'&&STATE.view==='settings'||act==='nav-career'&&STATE.view==='career'||act==='nav-cv'&&STATE.view==='cv'?'active':''}" data-action="${act}" ${act==='placeholder'?`data-label="${label}"`:''}>${icon(ic)}${label}</button>`).join('')}</nav></main>`;
 }
 // IKHTIAR Settings v0.1.3 — interactive accordion with working personal preferences.
 const SETTINGS_CARDS=[
@@ -292,7 +301,7 @@ function settingsPage(){
   </div><aside class="ik-settings-aside">
    <div class="ik-settings-summary"><div class="ik-settings-userline"><div class="ik-settings-avatar">${escapeHTML(u.initials)}</div><div><strong>${escapeHTML(u.name)}</strong><small>${escapeHTML(u.email)}</small></div></div>
     <div class="ik-settings-summary-divider"></div><div class="ik-settings-summary-item"><span>Hak akses</span><strong>${isAdmin()?'Super Admin':'User'}</strong></div>
-    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.1.4</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
+    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.2.0</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
    ${!adminView&&isAdmin()?`<button class="ik-settings-admin-link" data-action="nav-admin-settings">${icon('shield')} Buka Panel Super Admin ${icon('arrow-right')}</button>`:''}
    ${adminView?`<button class="ik-settings-admin-link" data-action="nav-settings">${icon('arrow-left')} Kembali ke Pengaturan Pribadi</button>`:''}
    <div class="ik-settings-hint"><strong>${icon('lock')} Privasi tetap utama</strong><p>Pengaturan pribadimu tidak memberikan akses ke data pengguna lain. Perubahan hak Super Admin hanya berlaku setelah diverifikasi oleh Supabase.</p></div>
@@ -300,11 +309,7 @@ function settingsPage(){
  </section>`;
 }
 function settingsCardContent(id){const u=userInfo();
- if(id==='profile')return `<form id="settings-profile-form" class="ik-settings-form">
-  <div class="ik-settings-description">Nama yang digunakan pada sapaan Dashboard dan identitas akun IKHTIAR.</div>
-  <label for="settings-full-name">Nama lengkap</label><input id="settings-full-name" name="fullName" autocomplete="name" maxlength="80" minlength="2" required value="${escapeHTML(u.name)}" ${STATE.demo?'disabled':''}>
-  <label for="settings-email">Alamat email</label><input id="settings-email" type="email" value="${escapeHTML(u.email)}" readonly aria-describedby="ik-email-help"><small id="ik-email-help">Email mengikuti akun autentikasi Supabase. Tidak diubah melalui formulir ini.</small>
-  <div class="ik-setting-actions"><button type="submit" class="btn btn-primary" ${STATE.demo||STATE.profileBusy?'disabled':''}>${STATE.profileBusy?'Menyimpan...':'Simpan Perubahan'}</button></div></form>`;
+ if(id==='profile')return `<div class="ik-setting-readonly"><p>Identitas profesional cukup diperbarui di <strong>Profil Karier</strong>. Nama pada dashboard dan CV menggunakan data yang sama sehingga tidak perlu diperbarui dua kali.</p><div class="ik-setting-detail"><span class="ik-detail-label">Nama di IKHTIAR</span><strong>${escapeHTML(u.name)}</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Email untuk login</span><strong>${escapeHTML(u.email)}</strong></div><button type="button" class="btn btn-primary" data-action="nav-career">${icon('user')} Buka Profil Karier</button></div>`;
  if(id==='security')return `<div class="ik-settings-security">
   <div class="ik-setting-detail"><span class="ik-detail-label">Email terverifikasi</span><strong>${STATE.demo?'Demo':STATE.session?.user?.email_confirmed_at?'Sudah terverifikasi':'Belum terverifikasi'}</strong></div>
   <div class="ik-setting-detail"><span class="ik-detail-label">Pemulihan kata sandi</span><p>Kirim tautan pemulihan ke email akun yang sedang digunakan. Pengiriman mengikuti batas Supabase.</p><button class="btn btn-outline" type="button" data-action="settings-password-reset" ${STATE.demo||STATE.passwordBusy?'disabled':''}>${STATE.passwordBusy?'Mengirim...':'Kirim Tautan Ubah Password'}</button></div>
@@ -317,7 +322,7 @@ function settingsCardContent(id){const u=userInfo();
  if(id==='privacy')return `<div class="ik-setting-readonly"><p>Data akun digunakan untuk autentikasi dan identitas pengguna. Portofolio serta CV akan memiliki pengaturan privasi tersendiri ketika modulnya dirilis.</p>
   <div class="ik-info-line">${icon('shield')} Role akun dan hak akses dikendalikan melalui database, bukan disimpan sebagai preferensi browser.</div>
   <div class="ik-info-line">${icon('lock')} Fitur ekspor seluruh data dan penghapusan akun mandiri belum diaktifkan. Tidak ada tombol yang menjanjikan operasi tersebut sebelum backend tersedia.</div></div>`;
- if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.1.4 — Admin Console</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div></div>`;
+ if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.2.0 — Career Profile & CV</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div></div>`;
  return '';
 }
 function adminCardContent(id){
@@ -445,19 +450,6 @@ async function confirmAdminRoleChange(){
  }finally{STATE.adminRoleBusy=false;if(isAdmin()&&STATE.view==='admin-settings')render();}
 }
 
-async function saveSettingsProfile(form){
- if(STATE.demo||!STATE.supabase||STATE.profileBusy)return;
- const name=String(new FormData(form).get('fullName')||'').trim();
- if(name.length<2||name.length>80){toast('Nama harus 2–80 karakter.');return;}
- STATE.profileBusy=true;
- try{
-  const {data,error}=await STATE.supabase.auth.updateUser({data:{full_name:name}});
-  if(error)throw error;
-  if(data?.user&&STATE.session){STATE.session={...STATE.session,user:data.user};}
-  toast('Nama akun berhasil diperbarui.');
- }catch(error){toast(error?.message||'Gagal menyimpan nama. Silakan coba kembali.');}
- finally{STATE.profileBusy=false;render();}
-}
 async function sendSettingsPasswordReset(){
  if(STATE.passwordBusy||STATE.demo||!STATE.supabase||!STATE.session?.user?.email)return;
  STATE.passwordBusy=true;render();
@@ -508,9 +500,10 @@ function logoutModal(){
  </div>`;
 }
 function render(){
- document.body.classList.toggle('dark',['dashboard','settings','admin-settings'].includes(STATE.view)&&STATE.dark);
+ if(STATE.view==='career'&&career.hasUnsaved())career.syncForm();
+ document.body.classList.toggle('dark',['dashboard','settings','admin-settings','career','cv'].includes(STATE.view)&&STATE.dark);
  document.body.classList.toggle('security-modal-open',STATE.logoutDialog||!!STATE.adminRoleDialog);
- ROOT.innerHTML=(STATE.view==='splash'?splash():STATE.view==='onboarding'?onboarding():['dashboard','settings','admin-settings'].includes(STATE.view)?dashboard():auth())+logoutModal()+adminRoleConfirmModal();
+ ROOT.innerHTML=(STATE.view==='splash'?splash():STATE.view==='onboarding'?onboarding():['dashboard','settings','admin-settings','career','cv'].includes(STATE.view)?dashboard():auth())+logoutModal()+adminRoleConfirmModal();
 }
 function openLogoutDialog(scope='local'){
  if(STATE.busyLogout || STATE.logoutDialog)return;
@@ -623,8 +616,9 @@ ROOT.addEventListener('click',async evt=>{
  if(action==='auth-verify')setMode('verify');
  if(action==='toggle-password'){const input=document.getElementById('password');const oldPos=input?.selectionStart;STATE.passwordVisible=!STATE.passwordVisible;if(input){input.type=STATE.passwordVisible?'text':'password';input.focus();try{input.setSelectionRange(oldPos,oldPos)}catch{}}const btn=actionEl;btn.innerHTML=icon(STATE.passwordVisible?'eye-off':'eye');btn.setAttribute('aria-label',STATE.passwordVisible?'Sembunyikan kata sandi':'Tampilkan kata sandi');}
  if(action==='google-login')await googleLogin();
- if(action==='view-demo'){STATE.demo=true;STATE.role='user';STATE.roleReady=true;go('dashboard');}
+ if(action==='view-demo'){career.clear();STATE.demo=true;STATE.role='user';STATE.roleReady=true;go('dashboard');}
  if(action==='toggle-theme')setTheme(STATE.dark?'light':'dark');
+ if(await career.handleClick(action,actionEl))return;
  if(action==='nav-dashboard')go('dashboard');
  if(action==='nav-settings'){STATE.settingSection='profile';go('settings');}
  if(action==='nav-admin-settings'){
@@ -659,11 +653,12 @@ ROOT.addEventListener('click',async evt=>{
  if(action==='cancel-logout')closeLogoutDialog();
  if(action==='logout-backdrop' && evt.target===actionEl)closeLogoutDialog();
  if(action==='confirm-logout')await confirmLogout();
- if(action==='placeholder')toast(`${actionEl.dataset.label||'Fitur ini'} akan tersedia pada milestone berikutnya. Foundation v0.1 fokus pada alur akun dan dashboard.`);
+ if(action==='placeholder')toast(`${actionEl.dataset.label||'Fitur ini'} akan tersedia pada milestone berikutnya. Modul ini sedang disiapkan pada milestone berikutnya.`);
 });
+ROOT.addEventListener('input',evt=>career.onInput(evt.target));
 ROOT.addEventListener('submit',async evt=>{
+ if(['career-form','cv-generate-form'].includes(evt.target.id)){evt.preventDefault();await career.handleSubmit(evt.target);return;}
  if(evt.target.id==='auth-form'){evt.preventDefault();await loginSubmit(evt.target);}
- if(evt.target.id==='settings-profile-form'){evt.preventDefault();await saveSettingsProfile(evt.target);}
  if(evt.target.id==='admin-announcement-form'){evt.preventDefault();await saveAdminAnnouncement(evt.target);}
  if(evt.target.id==='admin-users-search-form'){
   evt.preventDefault();
@@ -676,10 +671,13 @@ ROOT.addEventListener('submit',async evt=>{
 window.addEventListener('hashchange',()=>{
  if(!STATE.authReady||!STATE.splashDone)return;
  const requested=location.hash.replace(/^#\//,'').split('?')[0];
- if(['dashboard','settings','admin-settings'].includes(requested)){
+ if(STATE.view==='career'&&requested!=='career'&&STATE.session&&career.hasUnsaved()){
+  if(!window.confirm('Profil belum disimpan. Tinggalkan halaman dan batalkan perubahan?')){location.hash='/career';return;}
+ }
+ if(['dashboard','settings','admin-settings','career','cv'].includes(requested)){
   if(!STATE.session&&!STATE.demo){go('auth');return;}
   if(requested==='admin-settings'&&!isAdmin()){go('settings');return;}
-  if(STATE.view!==requested){STATE.view=requested;render();if(requested==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();}}
+  if(STATE.view!==requested){STATE.view=requested;render();if(['career','cv'].includes(requested))career.open(requested);if(requested==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();}}
  }else if(requested==='auth'&&!STATE.session&&STATE.view!=='auth'){STATE.view='auth';render();}
 });
 window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{
@@ -696,6 +694,7 @@ document.addEventListener('keydown',evt=>{
  if(evt.shiftKey&&active===first){evt.preventDefault();last.focus();}
  else if(!evt.shiftKey&&active===last){evt.preventDefault();first.focus();}
 });
+window.addEventListener('beforeunload',evt=>{if(STATE.session&&career.hasUnsaved()){evt.preventDefault();evt.returnValue='';}});
 window.addEventListener('focus',checkSession);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkSession();});
 window.addEventListener('online',checkSession);
@@ -717,6 +716,7 @@ function init(){
         document.body.append(bar);
         bar.querySelector('#ik-update-later').addEventListener('click',()=>bar.remove());
         bar.querySelector('#ik-update-apply').addEventListener('click',()=>{
+          if(career.hasUnsaved()){toast('Simpan perubahan Profil Karier sebelum memperbarui aplikasi.');return;}
           acceptingUpdate=true;bar.querySelector('#ik-update-apply').disabled=true;
           reg.waiting?.postMessage({type:'SKIP_WAITING'});
         });
