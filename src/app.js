@@ -6,7 +6,7 @@ const icon = (id, css = '') => `<svg class="i ${css}" aria-hidden="true"><use hr
 const escapeHTML = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const brand = (invert=false) => `<a href="#/auth" data-action="brand-home" class="brand ${invert?'invert':''}" aria-label="IKHTIAR"><img src="./assets/brand/logo-mark.png" alt=""><span><strong>IKHTIAR</strong><small>Your Career, Your Move.</small></span></a>`;
 const initialSeen = () => localStorage.getItem('ikhtiar:onboarding:done') === '1';
-const STATE = {view:'splash', slide:0, mode:'login', session:null, supabase:null, authReady:false, splashDone:false, authError:'', authNotice:'', passwordVisible:false, busy:false, demo:false, dark:localStorage.getItem('ikhtiar:theme')==='dark'};
+const STATE = {view:'splash', slide:0, mode:'login', session:null, supabase:null, authReady:false, splashDone:false, authError:'', authNotice:'', passwordVisible:false, busy:false, resendEmail:'', resendAt:0, demo:false, dark:localStorage.getItem('ikhtiar:theme')==='dark'};
 const slides = [
   {tag:'01 · SHOW YOUR WORK',title:'Tunjukkan karya. <span class="grad-text">Buka peluang.</span>',desc:'Bangun portofolio profesional yang terasa seperti dirimu. Tampilkan proyek, skill, dan pencapaian melalui satu tautan yang mudah dibagikan.',top:'Portofolio Online',bottom:'Karyamu, identitasmu',caption:'Perjalanan besar dimulai dari karya kecil yang kamu banggakan.'},
   {tag:'02 · BUILT FOR YOUR CAREER',title:'CV profesional, <span class="grad-text">lebih mudah.</span>',desc:'Susun CV ATS-friendly dari profil yang sama. Pilih template minimalis, lihat pratinjau langsung, dan siapkan dokumen untuk peluang berikutnya.',top:'CV ATS Ready',bottom:'Format yang lebih rapi',caption:'Bukan sekadar terlihat bagus — informasi penting juga harus mudah ditemukan.'},
@@ -75,6 +75,7 @@ function auth(){const isLogin=STATE.mode==='login';const isRegister=STATE.mode==
  ${isNewPassword?'':field('email','Alamat email','email','mail','email')}
  ${(!isForgot)?field('password',isNewPassword?'Kata sandi baru':'Kata sandi','password','lock',isNewPassword?'new-password':isRegister?'new-password':'current-password'):''}
  ${isLogin?`<div class="auth-help"><button type="button" class="text-btn" data-action="auth-forgot">Lupa kata sandi?</button></div>`:''}
+ ${isLogin||isRegister?`<div class="auth-help" style="margin-top:10px"><button type="button" class="text-btn" data-action="resend-verification" ${!STATE.supabase||STATE.busy?'disabled':''}>${STATE.busy?'Memproses...':'Kirim ulang email verifikasi'}</button></div>`:''}
  <button class="btn btn-primary btn-lg btn-wide" type="submit" ${!STATE.supabase||STATE.busy?'disabled':''}>${STATE.busy?'Memproses...':isLogin?'Masuk ke Dashboard':isRegister?'Buat Akun':isForgot?'Kirim Link Pemulihan':'Simpan Kata Sandi'} ${icon('arrow-right')}</button>
  </form>
  ${(isLogin||isRegister)?`<div class="auth-sep">atau lanjutkan dengan</div><button class="btn btn-outline btn-wide" data-action="google-login" ${!STATE.supabase||STATE.busy?'disabled':''}><span class="google-icon">G</span> Lanjutkan dengan Google</button>`:`<button class="btn btn-quiet btn-wide" style="margin-top:14px" data-action="auth-login">Kembali ke Login</button>`}
@@ -140,6 +141,28 @@ async function loginSubmit(form){
  }catch(err){STATE.authError='submit';STATE.authNotice=err?.message||'Proses gagal. Silakan coba lagi.';}
  finally{STATE.busy=false;render();}
 }
+async function resendVerification(){
+ if(!STATE.supabase||STATE.busy)return;
+ const email=String(document.getElementById('email')?.value||'').trim();
+ if(!email||!document.getElementById('email').checkValidity()){
+  STATE.authError='resend';STATE.authNotice='Masukkan alamat email yang valid terlebih dahulu.';render();return;
+ }
+ const wait=60_000-(Date.now()-STATE.resendAt);
+ if(wait>0){toast(`Tunggu sekitar ${Math.ceil(wait/1000)} detik sebelum meminta ulang.`);return;}
+ STATE.busy=true;STATE.authError='';STATE.authNotice='';
+ const btn=document.querySelector('[data-action="resend-verification"]');
+ if(btn){btn.disabled=true;btn.textContent='Mengirim...';}
+ try{
+  const {error}=await STATE.supabase.auth.resend({
+   type:'signup',email,
+   options:{emailRedirectTo:location.origin+location.pathname}
+  });
+  if(error)throw error;
+  STATE.resendAt=Date.now();
+  STATE.authNotice='Jika akun memerlukan konfirmasi, email verifikasi baru telah diminta. Periksa inbox dan spam.';
+ }catch(err){STATE.authError='resend';STATE.authNotice=err?.message||'Gagal meminta email verifikasi. Coba lagi nanti.';}
+ finally{STATE.busy=false;render();}
+}
 async function googleLogin(){if(!STATE.supabase){toast('Supabase belum dikonfigurasi.');return;}try{const {error}=await STATE.supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error)throw error;}catch(e){STATE.authError='oauth';STATE.authNotice=e?.message||'Tidak dapat masuk dengan Google.';render();}}
 async function logout(){if(STATE.demo){STATE.demo=false;go('auth');return;}if(STATE.supabase){const {error}=await STATE.supabase.auth.signOut();if(error){toast('Logout gagal. Coba lagi.');return;}}STATE.session=null;go('auth');}
 ROOT.addEventListener('click',async evt=>{
@@ -155,6 +178,7 @@ ROOT.addEventListener('click',async evt=>{
  if(action==='auth-login')setMode('login');
  if(action==='auth-register')setMode('register');
  if(action==='auth-forgot')setMode('forgot');
+ if(action==='resend-verification')await resendVerification();
  if(action==='toggle-password'){const input=document.getElementById('password');const oldPos=input?.selectionStart;STATE.passwordVisible=!STATE.passwordVisible;if(input){input.type=STATE.passwordVisible?'text':'password';input.focus();try{input.setSelectionRange(oldPos,oldPos)}catch{}}const btn=actionEl;btn.innerHTML=icon(STATE.passwordVisible?'eye-off':'eye');btn.setAttribute('aria-label',STATE.passwordVisible?'Sembunyikan kata sandi':'Tampilkan kata sandi');}
  if(action==='google-login')await googleLogin();
  if(action==='view-demo'){STATE.demo=true;go('dashboard');}
