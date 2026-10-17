@@ -62,21 +62,21 @@ function onboarding(){let s=slides[STATE.slide];return `<main class="onboard" ar
  </section></main>`}
 function formError(){return STATE.authNotice?`<div class="${STATE.authError?'auth-form-error':'auth-form-success'}" role="alert">${escapeHTML(STATE.authNotice)}</div>`:''}
 function field(id,label,type,iconName,auto='',req=true){return `<div class="auth-field"><label for="${id}">${label}</label><div class="input-wrap">${icon(iconName)}<input class="input" id="${id}" name="${id}" ${req?'required':''} ${auto?`autocomplete="${auto}"`:''} ${type==='password'?`minlength="8" type="${STATE.passwordVisible?'text':'password'}"`: `type="${type}"`} placeholder="${label}" ${type==='password'?'style="padding-right:50px"':''}/>${type==='password'?`<button type="button" class="pass-btn" data-action="toggle-password" aria-label="${STATE.passwordVisible?'Sembunyikan':'Tampilkan'} kata sandi">${icon(STATE.passwordVisible?'eye-off':'eye')}</button>`:''}</div></div>`}
-function auth(){const isLogin=STATE.mode==='login';const isRegister=STATE.mode==='register';const isForgot=STATE.mode==='forgot';const isNewPassword=STATE.mode==='newPassword';
- const heading=isLogin?'Selamat datang kembali!':isRegister?'Buat akun IKHTIAR':isForgot?'Pulihkan kata sandi':'Buat kata sandi baru';
- const desc=isLogin?'Lanjutkan perjalanan kariermu dari satu tempat.':isRegister?'Mulai bangun portofolio, CV, dan peluangmu.':isForgot?'Masukkan email akun agar kami mengirim tautan pemulihan.':'Masukkan kata sandi baru untuk akunmu.';
+function auth(){const isLogin=STATE.mode==='login';const isRegister=STATE.mode==='register';const isForgot=STATE.mode==='forgot';const isNewPassword=STATE.mode==='newPassword';const isVerify=STATE.mode==='verify';
+ const heading=isLogin?'Selamat datang kembali!':isRegister?'Buat akun IKHTIAR':isForgot?'Pulihkan kata sandi':isVerify?'Verifikasi email':'Buat kata sandi baru';
+ const desc=isLogin?'Lanjutkan perjalanan kariermu dari satu tempat.':isRegister?'Mulai bangun portofolio, CV, dan peluangmu.':isForgot?'Masukkan email akun agar kami mengirim tautan pemulihan.':isVerify?'Masukkan email yang digunakan saat mendaftar untuk meminta tautan verifikasi baru.':'Masukkan kata sandi baru untuk akunmu.';
  return `<main class="auth-page"><section class="auth-aside">${brand(true)}<div class="auth-big"><span class="pill">${icon('sparkles')} ALL-IN-ONE CAREER PLATFORM</span><h1>Lebih dari sekadar mencari <em>pekerjaan.</em></h1><p>Bangun profil, tunjukkan karya terbaikmu, dan mulai langkah menuju peluang baru bersama IKHTIAR.</p><div class="auth-features"><span>${icon('check')} Portofolio Online</span><span>${icon('check')} CV ATS</span><span>${icon('check')} Info Loker</span></div></div><div class="auth-aside-bottom">IKHTIAR — Your Career, Your Move.<br>Career Platform by Qulaimun.id</div></section>
  <section class="auth-main"><div class="auth-top"><button class="btn btn-quiet" data-action="replay-onboard">${icon('arrow-left')} Lihat pengenalan</button></div>
- <div class="auth-card"><span class="pill">${icon('lock')} ${isLogin?'MASUK AKUN':isRegister?'PENDAFTARAN':isForgot?'BANTUAN AKUN':'KEAMANAN AKUN'}</span><h2 style="margin-top:20px">${heading}</h2><p class="subtitle">${desc}</p>
+ <div class="auth-card"><span class="pill">${icon('lock')} ${isLogin?'MASUK AKUN':isRegister?'PENDAFTARAN':isForgot?'BANTUAN AKUN':isVerify?'VERIFIKASI EMAIL':'KEAMANAN AKUN'}</span><h2 style="margin-top:20px">${heading}</h2><p class="subtitle">${desc}</p>
  ${(isLogin||isRegister)?`<div class="auth-tabs" role="tablist"><button role="tab" aria-selected="${isLogin}" class="${isLogin?'active':''}" data-action="auth-login">Masuk</button><button role="tab" aria-selected="${isRegister}" class="${isRegister?'active':''}" data-action="auth-register">Daftar</button></div>`:''}
  ${formError()}
  <form id="auth-form">
  ${isRegister?field('fullName','Nama lengkap','text','user','name'):''}
  ${isNewPassword?'':field('email','Alamat email','email','mail','email')}
- ${(!isForgot)?field('password',isNewPassword?'Kata sandi baru':'Kata sandi','password','lock',isNewPassword?'new-password':isRegister?'new-password':'current-password'):''}
+ ${(!isForgot&&!isVerify)?field('password',isNewPassword?'Kata sandi baru':'Kata sandi','password','lock',isNewPassword?'new-password':isRegister?'new-password':'current-password'):''}
  ${isLogin?`<div class="auth-help"><button type="button" class="text-btn" data-action="auth-forgot">Lupa kata sandi?</button></div>`:''}
- ${isLogin||isRegister?`<div class="auth-help" style="margin-top:10px"><button type="button" class="text-btn" data-action="resend-verification" ${!STATE.supabase||STATE.busy?'disabled':''}>${STATE.busy?'Memproses...':'Kirim ulang email verifikasi'}</button></div>`:''}
- <button class="btn btn-primary btn-lg btn-wide" type="submit" ${!STATE.supabase||STATE.busy?'disabled':''}>${STATE.busy?'Memproses...':isLogin?'Masuk ke Dashboard':isRegister?'Buat Akun':isForgot?'Kirim Link Pemulihan':'Simpan Kata Sandi'} ${icon('arrow-right')}</button>
+ ${isLogin||isRegister?`<div class="auth-help" style="margin-top:10px"><button type="button" class="text-btn" data-action="auth-verify">Kirim ulang email verifikasi</button></div>`:''}
+ <button class="btn btn-primary btn-lg btn-wide" type="submit" ${!STATE.supabase||STATE.busy?'disabled':''}>${STATE.busy?'Memproses...':isLogin?'Masuk ke Dashboard':isRegister?'Buat Akun':isForgot?'Kirim Link Pemulihan':isVerify?'Kirim Tautan Verifikasi':'Simpan Kata Sandi'} ${icon('arrow-right')}</button>
  </form>
  ${(isLogin||isRegister)?`<div class="auth-sep">atau lanjutkan dengan</div><button class="btn btn-outline btn-wide" data-action="google-login" ${!STATE.supabase||STATE.busy?'disabled':''}><span class="google-icon">G</span> Lanjutkan dengan Google</button>`:`<button class="btn btn-quiet btn-wide" style="margin-top:14px" data-action="auth-login">Kembali ke Login</button>`}
  ${!STATE.supabase?`<div class="auth-note">${icon('info')} Mode pratinjau. Login asli belum aktif hingga Supabase dikonfigurasi. Gunakan dashboard demo untuk meninjau tampilan.</div>`:''}
@@ -117,6 +117,7 @@ function finishOnboarding(){localStorage.setItem('ikhtiar:onboarding:done','1');
 function setMode(mode){STATE.mode=mode;STATE.authNotice='';STATE.authError='';STATE.passwordVisible=false;render();}
 async function loginSubmit(form){
  if(!STATE.supabase){toast('Hubungkan Supabase di config.js untuk mengaktifkan login.');return;}
+ if(STATE.mode==='verify'){await resendVerification(form);return;}
  const data=new FormData(form),email=String(data.get('email')||'').trim(),password=String(data.get('password')||''),fullName=String(data.get('fullName')||'').trim();
  STATE.busy=true;STATE.authNotice='';render();
  try{
@@ -141,17 +142,15 @@ async function loginSubmit(form){
  }catch(err){STATE.authError='submit';STATE.authNotice=err?.message||'Proses gagal. Silakan coba lagi.';}
  finally{STATE.busy=false;render();}
 }
-async function resendVerification(){
+async function resendVerification(form){
  if(!STATE.supabase||STATE.busy)return;
- const email=String(document.getElementById('email')?.value||'').trim();
- if(!email||!document.getElementById('email').checkValidity()){
-  STATE.authError='resend';STATE.authNotice='Masukkan alamat email yang valid terlebih dahulu.';render();return;
+ const email=String(new FormData(form).get('email')||'').trim();
+ if(!email||!form.querySelector('#email')?.checkValidity()){
+  STATE.authError='resend';STATE.authNotice='Masukkan alamat email yang valid.';render();return;
  }
  const wait=60_000-(Date.now()-STATE.resendAt);
  if(wait>0){toast(`Tunggu sekitar ${Math.ceil(wait/1000)} detik sebelum meminta ulang.`);return;}
- STATE.busy=true;STATE.authError='';STATE.authNotice='';
- const btn=document.querySelector('[data-action="resend-verification"]');
- if(btn){btn.disabled=true;btn.textContent='Mengirim...';}
+ STATE.busy=true;STATE.authError='';STATE.authNotice='';render();
  try{
   const {error}=await STATE.supabase.auth.resend({
    type:'signup',email,
@@ -159,9 +158,13 @@ async function resendVerification(){
   });
   if(error)throw error;
   STATE.resendAt=Date.now();
-  STATE.authNotice='Jika akun memerlukan konfirmasi, email verifikasi baru telah diminta. Periksa inbox dan spam.';
- }catch(err){STATE.authError='resend';STATE.authNotice=err?.message||'Gagal meminta email verifikasi. Coba lagi nanti.';}
- finally{STATE.busy=false;render();}
+  STATE.authNotice='Jika akun masih menunggu konfirmasi, permintaan email verifikasi telah diproses. Periksa inbox dan spam.';
+ }catch(err){
+  STATE.authError='resend';
+  STATE.authNotice=/rate limit|too many requests/i.test(err?.message||'')
+   ?'Batas pengiriman email Supabase tercapai. Tunggu hingga kuota pulih, lalu coba kembali. Menghapus akun tidak mengatur ulang batas ini.'
+   :(err?.message||'Gagal meminta email verifikasi. Coba lagi nanti.');
+ }finally{STATE.busy=false;render();}
 }
 async function googleLogin(){if(!STATE.supabase){toast('Supabase belum dikonfigurasi.');return;}try{const {error}=await STATE.supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error)throw error;}catch(e){STATE.authError='oauth';STATE.authNotice=e?.message||'Tidak dapat masuk dengan Google.';render();}}
 async function logout(){if(STATE.demo){STATE.demo=false;go('auth');return;}if(STATE.supabase){const {error}=await STATE.supabase.auth.signOut();if(error){toast('Logout gagal. Coba lagi.');return;}}STATE.session=null;go('auth');}
@@ -178,7 +181,7 @@ ROOT.addEventListener('click',async evt=>{
  if(action==='auth-login')setMode('login');
  if(action==='auth-register')setMode('register');
  if(action==='auth-forgot')setMode('forgot');
- if(action==='resend-verification')await resendVerification();
+ if(action==='auth-verify')setMode('verify');
  if(action==='toggle-password'){const input=document.getElementById('password');const oldPos=input?.selectionStart;STATE.passwordVisible=!STATE.passwordVisible;if(input){input.type=STATE.passwordVisible?'text':'password';input.focus();try{input.setSelectionRange(oldPos,oldPos)}catch{}}const btn=actionEl;btn.innerHTML=icon(STATE.passwordVisible?'eye-off':'eye');btn.setAttribute('aria-label',STATE.passwordVisible?'Sembunyikan kata sandi':'Tampilkan kata sandi');}
  if(action==='google-login')await googleLogin();
  if(action==='view-demo'){STATE.demo=true;go('dashboard');}
