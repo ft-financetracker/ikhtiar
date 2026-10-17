@@ -12,7 +12,7 @@ const preferredTheme=THEME_MODES.includes(savedTheme)?savedTheme:'system';
 const systemDark=()=>window.matchMedia?.('(prefers-color-scheme: dark)').matches??false;
 const FONT_SCALES=[1,1.1,1.2];
 const storedScale=Number(localStorage.getItem('ikhtiar:font-scale'));
-const STATE = {view:'splash', slide:0, mode:'login', session:null, supabase:null, authReady:false, splashDone:false, authError:'', authNotice:'', passwordVisible:false, busy:false, resendEmail:'', resendAt:0, logoutDialog:false, logoutScope:'local', busyLogout:false, localLogoutInProgress:false, sessionCheckAt:0, sessionChecking:false, demo:false, themeMode:preferredTheme, dark:preferredTheme==='dark'||(preferredTheme==='system'&&systemDark()), fontScale:FONT_SCALES.includes(storedScale)?storedScale:1, settingSection:'profile', adminSection:'platform', role:'user', roleReady:false, roleRequest:0, platformNotice:'', platformReady:false, platformBusy:false, profileBusy:false, passwordBusy:false};
+const STATE = {view:'splash', slide:0, mode:'login', session:null, supabase:null, authReady:false, splashDone:false, authError:'', authNotice:'', passwordVisible:false, busy:false, resendEmail:'', resendAt:0, logoutDialog:false, logoutScope:'local', busyLogout:false, localLogoutInProgress:false, sessionCheckAt:0, sessionChecking:false, demo:false, themeMode:preferredTheme, dark:preferredTheme==='dark'||(preferredTheme==='system'&&systemDark()), fontScale:FONT_SCALES.includes(storedScale)?storedScale:1, settingSection:'profile', adminSection:'platform', role:'user', roleReady:false, roleRequest:0, platformNotice:'', platformReady:false, platformBusy:false, profileBusy:false, passwordBusy:false, adminUsers:[], adminUsersTotal:0, adminUsersSearch:'', adminUsersPage:0, adminUsersBusy:false, adminUsersLoaded:false, adminUsersError:'', adminAudit:[], adminAuditBusy:false, adminAuditLoaded:false, adminAuditError:'', adminRoleDialog:null, adminRoleBusy:false};
 const slides = [
   {tag:'01 · SHOW YOUR WORK',title:'Tunjukkan karya. <span class="grad-text">Buka peluang.</span>',desc:'Bangun portofolio profesional yang terasa seperti dirimu. Tampilkan proyek, skill, dan pencapaian melalui satu tautan yang mudah dibagikan.',top:'Portofolio Online',bottom:'Karyamu, identitasmu',caption:'Perjalanan besar dimulai dari karya kecil yang kamu banggakan.'},
   {tag:'02 · BUILT FOR YOUR CAREER',title:'CV profesional, <span class="grad-text">lebih mudah.</span>',desc:'Susun CV ATS-friendly dari profil yang sama. Pilih template minimalis, lihat pratinjau langsung, dan siapkan dokumen untuk peluang berikutnya.',top:'CV ATS Ready',bottom:'Format yang lebih rapi',caption:'Bukan sekadar terlihat bagus — informasi penting juga harus mudah ditemukan.'},
@@ -27,7 +27,7 @@ function go(view){
  location.hash=`/${view}`;
  render();
  window.scrollTo(0,0);
- if(view==='admin-settings')loadPlatformSettings();
+ if(view==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();}
 }
 function setTheme(mode){
  if(!THEME_MODES.includes(mode))return;
@@ -39,6 +39,7 @@ function setTheme(mode){
 async function loadRole(userId){
  const request=++STATE.roleRequest;
  STATE.role='user';STATE.roleReady=false;
+ STATE.adminUsers=[];STATE.adminUsersLoaded=false;STATE.adminAudit=[];STATE.adminAuditLoaded=false;STATE.adminRoleDialog=null;
  if(!userId||!STATE.supabase||STATE.demo){STATE.roleReady=true;return;}
  try{
   const {data,error}=await STATE.supabase.from('account_roles').select('role').eq('user_id',userId).maybeSingle();
@@ -108,8 +109,9 @@ async function authInit(){
     }
     if(event==='SIGNED_OUT'){
       ++STATE.roleRequest;STATE.role='user';STATE.roleReady=false;STATE.platformNotice='';STATE.platformReady=false;
+      STATE.adminUsers=[];STATE.adminUsersLoaded=false;STATE.adminUsersError='';STATE.adminAudit=[];STATE.adminAuditLoaded=false;STATE.adminAuditError='';STATE.adminRoleDialog=null;
       const intentional=STATE.localLogoutInProgress;
-      STATE.logoutDialog=false;
+      STATE.logoutDialog=false;STATE.adminRoleDialog=null;
       STATE.busyLogout=false;
       if(!STATE.demo && STATE.authReady && STATE.splashDone && (['dashboard','settings','admin-settings'].includes(STATE.view)||previousSession)){
         STATE.mode='login';
@@ -263,8 +265,8 @@ const SETTINGS_CARDS=[
 ];
 const ADMIN_CARDS=[
  {id:'platform',title:'Informasi Platform',sub:'Pengumuman resmi untuk pengguna',icon:'bell'},
- {id:'users',title:'Pengguna & Role',sub:'Akses akun dan hak administrasi',icon:'users'},
- {id:'audit',title:'Audit & Sistem',sub:'Status keamanan dan roadmap sistem',icon:'shield'}
+ {id:'users',title:'Pengguna & Role',sub:'Direktori, pencarian, dan hak akses',icon:'users'},
+ {id:'audit',title:'Audit & Sistem',sub:'Riwayat tindakan dan keamanan admin',icon:'shield'}
 ];
 function settingCard(card,expanded,admin=false){
  const active=expanded===card.id;
@@ -290,7 +292,7 @@ function settingsPage(){
   </div><aside class="ik-settings-aside">
    <div class="ik-settings-summary"><div class="ik-settings-userline"><div class="ik-settings-avatar">${escapeHTML(u.initials)}</div><div><strong>${escapeHTML(u.name)}</strong><small>${escapeHTML(u.email)}</small></div></div>
     <div class="ik-settings-summary-divider"></div><div class="ik-settings-summary-item"><span>Hak akses</span><strong>${isAdmin()?'Super Admin':'User'}</strong></div>
-    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.1.3</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
+    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.1.4</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
    ${!adminView&&isAdmin()?`<button class="ik-settings-admin-link" data-action="nav-admin-settings">${icon('shield')} Buka Panel Super Admin ${icon('arrow-right')}</button>`:''}
    ${adminView?`<button class="ik-settings-admin-link" data-action="nav-settings">${icon('arrow-left')} Kembali ke Pengaturan Pribadi</button>`:''}
    <div class="ik-settings-hint"><strong>${icon('lock')} Privasi tetap utama</strong><p>Pengaturan pribadimu tidak memberikan akses ke data pengguna lain. Perubahan hak Super Admin hanya berlaku setelah diverifikasi oleh Supabase.</p></div>
@@ -315,7 +317,7 @@ function settingsCardContent(id){const u=userInfo();
  if(id==='privacy')return `<div class="ik-setting-readonly"><p>Data akun digunakan untuk autentikasi dan identitas pengguna. Portofolio serta CV akan memiliki pengaturan privasi tersendiri ketika modulnya dirilis.</p>
   <div class="ik-info-line">${icon('shield')} Role akun dan hak akses dikendalikan melalui database, bukan disimpan sebagai preferensi browser.</div>
   <div class="ik-info-line">${icon('lock')} Fitur ekspor seluruh data dan penghapusan akun mandiri belum diaktifkan. Tidak ada tombol yang menjanjikan operasi tersebut sebelum backend tersedia.</div></div>`;
- if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.1.3 — Settings & Roles</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div></div>`;
+ if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.1.4 — Admin Console</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div></div>`;
  return '';
 }
 function adminCardContent(id){
@@ -323,15 +325,126 @@ function adminCardContent(id){
   <label for="admin-announcement">Pengumuman platform</label><textarea id="admin-announcement" name="announcement" rows="3" maxlength="240" placeholder="Contoh: Selamat datang di IKHTIAR!" ${!STATE.platformReady||STATE.platformBusy?'disabled':''}>${escapeHTML(STATE.platformNotice)}</textarea><small>Maksimal 240 karakter. Kosongkan untuk menyembunyikan pengumuman.</small>
   ${!STATE.platformReady?`<div class="ik-setting-warning">Fitur ini memerlukan migrasi Supabase <code>002_settings_roles.sql</code>. Belum tersambung ke konfigurasi platform.</div>`:''}
   <div class="ik-setting-actions"><button type="submit" class="btn btn-primary" ${!STATE.platformReady||STATE.platformBusy?'disabled':''}>${STATE.platformBusy?'Menyimpan...':'Publikasikan Pengumuman'}</button></div></form>`;
- if(id==='users')return `<div class="ik-setting-readonly"><p>Hak akses akun dipisahkan antara <strong>User</strong> dan <strong>Super Admin</strong> melalui tabel <code>public.account_roles</code>.</p>
-  <div class="ik-info-line">${icon('check')} Identitas akun saat ini telah diverifikasi memiliki role Super Admin.</div>
-  <div class="ik-info-line">${icon('lock')} Penetapan atau pencabutan Super Admin hanya melalui SQL Editor / proses backend berizin. Form perubahan role massal belum diaktifkan.</div>
-  <p class="ik-setting-fineprint">Ini mencegah pengguna meningkatkan role sendiri dari browser.</p></div>`;
- if(id==='audit')return `<div class="ik-setting-readonly"><p>Seluruh akses perubahan pengumuman platform dilindungi oleh Row Level Security (RLS) Supabase.</p>
-  <div class="ik-info-line">${icon('shield')} Audit log lintas pengguna, moderasi, dan pengaturan maintenance global akan dikerjakan pada tahap backend admin berikutnya.</div>
-  <div class="ik-info-line">${icon('info')} Jangan simpan service_role key atau secret di GitHub Pages.</div></div>`;
+ if(id==='users')return adminUsersContent();
+ if(id==='audit')return adminAuditContent();
  return '';
 }
+// IKHTIAR v0.1.4 — Privileged account directory, role workflow, and audit.
+// All privileged operations are Supabase RPC calls that recheck Super Admin server-side.
+const ADMIN_PAGE_SIZE=10;
+function adminDate(value){
+ if(!value)return 'Belum ada';
+ const date=new Date(value);
+ return Number.isNaN(date.valueOf())?'—':new Intl.DateTimeFormat('id-ID',{dateStyle:'medium',timeStyle:'short'}).format(date);
+}
+function adminRoleBadge(role){return `<span class="ik-admin-badge ${role==='super_admin'?'ik-admin-badge-admin':''}">${role==='super_admin'?'Super Admin':'User'}</span>`;}
+function adminUsersContent(){
+ const users=STATE.adminUsers;
+ const total=STATE.adminUsersTotal;
+ const from=users.length?STATE.adminUsersPage*ADMIN_PAGE_SIZE+1:0;
+ const to=users.length?from+users.length-1:0;
+ return `<div class="ik-admin-users" aria-label="Manajemen pengguna">
+  <p class="ik-settings-description">Cari akun yang sudah terdaftar dan kelola role melalui Supabase. Perubahan role memerlukan konfirmasi dan dicatat dalam audit.</p>
+  <form id="admin-users-search-form" class="ik-admin-search" role="search">
+   <label class="ik-admin-search-label" for="admin-user-query">Cari email atau nama</label>
+   <div class="ik-admin-search-row"><input id="admin-user-query" name="search" type="search" maxlength="80" autocomplete="off" placeholder="Cari nama atau email..." value="${escapeHTML(STATE.adminUsersSearch)}"><button class="btn btn-primary" type="submit" ${STATE.adminUsersBusy?'disabled':''}>${icon('search')} Cari</button></div>
+  </form>
+  ${STATE.adminUsersError?`<div class="ik-setting-warning" role="alert">${escapeHTML(STATE.adminUsersError)}<br>Pastikan SQL v0.1.4 telah dijalankan di Supabase.</div>`:''}
+  <div class="ik-admin-list-heading"><span>${STATE.adminUsersLoaded?`${total} akun ditemukan`:'Direktori pengguna'}</span><button type="button" class="ik-admin-refresh" data-action="admin-refresh-users" ${STATE.adminUsersBusy?'disabled':''}>${icon('settings')} Refresh</button></div>
+  ${STATE.adminUsersBusy?'<div class="ik-admin-empty" role="status">Memuat data pengguna...</div>':!STATE.adminUsersLoaded?'<div class="ik-admin-empty">Daftar akun ditampilkan setelah fungsi Supabase v0.1.4 siap.</div>':users.length===0?'<div class="ik-admin-empty">Tidak ada pengguna sesuai pencarian.</div>':`<div class="ik-admin-user-list">${users.map(user=>{
+    const own=user.user_id===STATE.session?.user?.id;
+    const newRole=user.role==='super_admin'?'user':'super_admin';
+    const actionLabel=user.role==='super_admin'?'Cabut Super Admin':'Jadikan Super Admin';
+    return `<article class="ik-admin-user-row"><div class="ik-admin-user-main"><span class="ik-admin-mini-avatar">${escapeHTML((user.display_name||user.email||'U').trim().charAt(0).toUpperCase())}</span><div class="ik-admin-user-identity"><strong>${escapeHTML(user.display_name||'Pengguna')}${own?' <span class="ik-admin-self">(Anda)</span>':''}</strong><small>${escapeHTML(user.email||'—')}</small><span class="ik-admin-user-date">Bergabung ${escapeHTML(adminDate(user.created_at))}</span></div></div><div class="ik-admin-user-controls">${adminRoleBadge(user.role)}<button type="button" class="ik-admin-role-button ${newRole==='user'?'is-revoke':''}" data-action="admin-change-role" data-user-id="${escapeHTML(user.user_id)}" ${own?'disabled title="Tidak dapat mengubah role akun sendiri"':''}>${own?'Akun sendiri':actionLabel}</button></div></article>`;
+  }).join('')}</div>`}
+  ${STATE.adminUsersLoaded&&!STATE.adminUsersBusy?`<div class="ik-admin-pagination"><small>Menampilkan ${from}–${to} dari ${total} akun</small><div><button type="button" class="ik-admin-page" data-action="admin-page-prev" ${STATE.adminUsersPage<=0?'disabled':''}>${icon('arrow-left')} Sebelumnya</button><button type="button" class="ik-admin-page" data-action="admin-page-next" ${to>=total?'disabled':''}>Berikutnya ${icon('arrow-right')}</button></div></div>`:''}
+  <p class="ik-setting-fineprint">Email dan aktivitas login hanya dapat diakses oleh Super Admin yang terverifikasi. Role tidak dapat diubah melalui metadata pengguna atau localStorage.</p>
+ </div>`;
+}
+function adminAuditContent(){
+ return `<div class="ik-admin-audit"><p class="ik-settings-description">Riwayat perubahan role dan pengumuman platform sejak migrasi SQL v0.1.4 dipasang. Log lama sebelum migrasi tidak dibuat secara retroaktif.</p>
+  <div class="ik-admin-list-heading"><strong>20 aktivitas terbaru</strong><button type="button" class="ik-admin-refresh" data-action="admin-refresh-audit" ${STATE.adminAuditBusy?'disabled':''}>${icon('settings')} Refresh</button></div>
+  ${STATE.adminAuditError?`<div class="ik-setting-warning" role="alert">${escapeHTML(STATE.adminAuditError)}<br>Periksa migrasi SQL v0.1.4 di Supabase.</div>`:''}
+  ${STATE.adminAuditBusy?'<div class="ik-admin-empty" role="status">Memuat riwayat admin...</div>':!STATE.adminAuditLoaded?'<div class="ik-admin-empty">Riwayat akan dimuat setelah fungsi audit tersedia.</div>':!STATE.adminAudit.length?'<div class="ik-admin-empty">Belum ada perubahan admin yang tercatat sejak migrasi dipasang.</div>':`<div class="ik-admin-audit-list">${STATE.adminAudit.map(item=>`<article class="ik-admin-audit-row"><div class="ik-admin-audit-icon">${icon(item.event_type==='role_changed'?'shield':'bell')}</div><div class="ik-admin-audit-copy"><strong>${item.event_type==='role_changed'?'Perubahan hak akses':'Pengumuman diperbarui'}</strong><p>${item.event_type==='role_changed'?`${escapeHTML(item.target_email||'Akun tidak tersedia')}: ${escapeHTML(item.old_value||'user')} → ${escapeHTML(item.new_value||'user')}`:'Pengumuman platform telah diubah'}</p><small>Oleh ${escapeHTML(item.actor_email||'Sistem')} · ${escapeHTML(adminDate(item.occurred_at))}</small></div></article>`).join('')}</div>`}
+  <div class="ik-info-line">${icon('lock')} Log hanya dapat dibaca Super Admin. Tidak ada tombol hapus atau edit riwayat.</div>
+ </div>`;
+}
+async function loadAdminUsers(){
+ if(!isAdmin()||!STATE.supabase||STATE.adminUsersBusy)return;
+ const accountId=STATE.session.user.id;
+ STATE.adminUsersBusy=true;STATE.adminUsersError='';
+ if(STATE.view==='admin-settings')render();
+ try{
+  const {data,error}=await STATE.supabase.rpc('ik_admin_list_users',{p_search:STATE.adminUsersSearch,p_page:STATE.adminUsersPage});
+  if(error)throw error;
+  if(!isAdmin()||STATE.session?.user?.id!==accountId)return;
+  STATE.adminUsers=Array.isArray(data)?data:[];
+  STATE.adminUsersTotal=Number(STATE.adminUsers[0]?.total_count||0);
+  STATE.adminUsersLoaded=true;
+ }catch(error){
+  if(!isAdmin()||STATE.session?.user?.id!==accountId)return;
+  console.warn('IKHTIAR admin users:',error?.message||error);
+  STATE.adminUsers=[];STATE.adminUsersTotal=0;STATE.adminUsersLoaded=false;
+  STATE.adminUsersError='Tidak dapat mengambil direktori pengguna.';
+ }finally{STATE.adminUsersBusy=false;if(isAdmin()&&STATE.view==='admin-settings'&&STATE.adminSection==='users')render();}
+}
+async function loadAdminAudit(){
+ if(!isAdmin()||!STATE.supabase||STATE.adminAuditBusy)return;
+ const accountId=STATE.session.user.id;
+ STATE.adminAuditBusy=true;STATE.adminAuditError='';
+ if(STATE.view==='admin-settings')render();
+ try{
+  const {data,error}=await STATE.supabase.rpc('ik_admin_list_audit',{p_limit:20});
+  if(error)throw error;
+  if(!isAdmin()||STATE.session?.user?.id!==accountId)return;
+  STATE.adminAudit=Array.isArray(data)?data:[];
+  STATE.adminAuditLoaded=true;
+ }catch(error){
+  if(!isAdmin()||STATE.session?.user?.id!==accountId)return;
+  console.warn('IKHTIAR admin audit:',error?.message||error);
+  STATE.adminAudit=[];STATE.adminAuditLoaded=false;
+  STATE.adminAuditError='Tidak dapat memuat riwayat aktivitas admin.';
+ }finally{STATE.adminAuditBusy=false;if(isAdmin()&&STATE.view==='admin-settings'&&STATE.adminSection==='audit')render();}
+}
+function openAdminRoleDialog(id){
+ if(!isAdmin()||STATE.adminRoleBusy)return;
+ const user=STATE.adminUsers.find(x=>x.user_id===id);
+ if(!user||id===STATE.session?.user?.id)return;
+ STATE.adminRoleDialog={userId:user.user_id,email:user.email,displayName:user.display_name,currentRole:user.role,newRole:user.role==='super_admin'?'user':'super_admin'};
+ render();
+ ROOT.querySelector('[data-action="admin-role-cancel"]')?.focus();
+}
+function closeAdminRoleDialog(){if(STATE.adminRoleBusy)return;STATE.adminRoleDialog=null;render();}
+function adminRoleConfirmModal(){
+ const dlg=STATE.adminRoleDialog;
+ if(!dlg||!isAdmin())return '';
+ const promote=dlg.newRole==='super_admin';
+ return `<div class="security-modal-backdrop ik-admin-modal-overlay" data-action="admin-role-backdrop"><section class="security-modal" role="dialog" aria-modal="true" aria-labelledby="admin-role-title" aria-describedby="admin-role-description">
+  <div class="security-modal-header"><span class="security-modal-symbol">${icon('shield')}</span><button type="button" class="security-modal-close" data-action="admin-role-cancel" aria-label="Tutup dialog" ${STATE.adminRoleBusy?'disabled':''}>×</button></div>
+  <h2 id="admin-role-title">${promote?'Jadikan Super Admin?':'Cabut hak Super Admin?'}</h2>
+  <p id="admin-role-description">Akun <strong>${escapeHTML(dlg.email||dlg.displayName)}</strong> akan ${promote?'mendapat akses ke data akun dan konfigurasi administrasi':'kehilangan hak mengelola platform'}. Perubahan dicatat pada Audit & Sistem.</p>
+  <div class="security-modal-actions"><button type="button" class="btn security-modal-cancel" data-action="admin-role-cancel" ${STATE.adminRoleBusy?'disabled':''}>Batal</button><button type="button" class="btn ${promote?'security-modal-confirm':'ik-admin-revoke-confirm'}" data-action="admin-role-confirm" ${STATE.adminRoleBusy?'disabled':''}>${STATE.adminRoleBusy?'Memproses...':promote?'Ya, Berikan Akses':'Ya, Cabut Akses'}</button></div>
+ </section></div>`;
+}
+async function confirmAdminRoleChange(){
+ const dlg=STATE.adminRoleDialog;
+ if(!dlg||!isAdmin()||STATE.adminRoleBusy)return;
+ STATE.adminRoleBusy=true;render();
+ try{
+  const {error}=await STATE.supabase.rpc('ik_admin_set_role',{p_target_user_id:dlg.userId,p_new_role:dlg.newRole});
+  if(error)throw error;
+  STATE.adminRoleDialog=null;
+  STATE.adminUsersLoaded=false;
+  STATE.adminAuditLoaded=false;
+  toast(dlg.newRole==='super_admin'?'Hak Super Admin berhasil diberikan.':'Hak Super Admin berhasil dicabut.');
+  await loadAdminUsers();
+ }catch(error){
+  console.warn('IKHTIAR role mutation:',error?.message||error);
+  STATE.adminRoleDialog=null;
+  toast(error?.message||'Perubahan hak akses gagal. Pastikan SQL v0.1.4 sudah terpasang.');
+ }finally{STATE.adminRoleBusy=false;if(isAdmin()&&STATE.view==='admin-settings')render();}
+}
+
 async function saveSettingsProfile(form){
  if(STATE.demo||!STATE.supabase||STATE.profileBusy)return;
  const name=String(new FormData(form).get('fullName')||'').trim();
@@ -396,8 +509,8 @@ function logoutModal(){
 }
 function render(){
  document.body.classList.toggle('dark',['dashboard','settings','admin-settings'].includes(STATE.view)&&STATE.dark);
- document.body.classList.toggle('security-modal-open',STATE.logoutDialog);
- ROOT.innerHTML=(STATE.view==='splash'?splash():STATE.view==='onboarding'?onboarding():['dashboard','settings','admin-settings'].includes(STATE.view)?dashboard():auth())+logoutModal();
+ document.body.classList.toggle('security-modal-open',STATE.logoutDialog||!!STATE.adminRoleDialog);
+ ROOT.innerHTML=(STATE.view==='splash'?splash():STATE.view==='onboarding'?onboarding():['dashboard','settings','admin-settings'].includes(STATE.view)?dashboard():auth())+logoutModal()+adminRoleConfirmModal();
 }
 function openLogoutDialog(scope='local'){
  if(STATE.busyLogout || STATE.logoutDialog)return;
@@ -524,8 +637,16 @@ ROOT.addEventListener('click',async evt=>{
  }
  if(action==='admin-section'&&isAdmin()){
   const id=actionEl.dataset.section;
-  if(ADMIN_CARDS.some(c=>c.id===id)){STATE.adminSection=STATE.adminSection===id?'':id;render();}
+  if(ADMIN_CARDS.some(c=>c.id===id)){STATE.adminSection=STATE.adminSection===id?'':id;render();if(STATE.adminSection==='users'&&!STATE.adminUsersLoaded)loadAdminUsers();if(STATE.adminSection==='audit'&&!STATE.adminAuditLoaded)loadAdminAudit();}
  }
+ if(action==='admin-refresh-users'&&isAdmin())await loadAdminUsers();
+ if(action==='admin-refresh-audit'&&isAdmin())await loadAdminAudit();
+ if(action==='admin-page-prev'&&isAdmin()&&STATE.adminUsersPage>0){STATE.adminUsersPage--;await loadAdminUsers();}
+ if(action==='admin-page-next'&&isAdmin()&&((STATE.adminUsersPage+1)*ADMIN_PAGE_SIZE)<STATE.adminUsersTotal){STATE.adminUsersPage++;await loadAdminUsers();}
+ if(action==='admin-change-role'&&isAdmin())openAdminRoleDialog(actionEl.dataset.userId);
+ if(action==='admin-role-cancel')closeAdminRoleDialog();
+ if(action==='admin-role-backdrop'&&evt.target===actionEl)closeAdminRoleDialog();
+ if(action==='admin-role-confirm')await confirmAdminRoleChange();
  if(action==='settings-theme')setTheme(actionEl.dataset.value);
  if(action==='settings-font'){
   const n=Number(actionEl.dataset.value);
@@ -544,6 +665,13 @@ ROOT.addEventListener('submit',async evt=>{
  if(evt.target.id==='auth-form'){evt.preventDefault();await loginSubmit(evt.target);}
  if(evt.target.id==='settings-profile-form'){evt.preventDefault();await saveSettingsProfile(evt.target);}
  if(evt.target.id==='admin-announcement-form'){evt.preventDefault();await saveAdminAnnouncement(evt.target);}
+ if(evt.target.id==='admin-users-search-form'){
+  evt.preventDefault();
+  if(!isAdmin()||STATE.adminUsersBusy)return;
+  STATE.adminUsersSearch=String(new FormData(evt.target).get('search')||'').trim().slice(0,80);
+  STATE.adminUsersPage=0;
+  await loadAdminUsers();
+ }
 });
 window.addEventListener('hashchange',()=>{
  if(!STATE.authReady||!STATE.splashDone)return;
@@ -551,15 +679,15 @@ window.addEventListener('hashchange',()=>{
  if(['dashboard','settings','admin-settings'].includes(requested)){
   if(!STATE.session&&!STATE.demo){go('auth');return;}
   if(requested==='admin-settings'&&!isAdmin()){go('settings');return;}
-  if(STATE.view!==requested){STATE.view=requested;render();if(requested==='admin-settings')loadPlatformSettings();}
+  if(STATE.view!==requested){STATE.view=requested;render();if(requested==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();}}
  }else if(requested==='auth'&&!STATE.session&&STATE.view!=='auth'){STATE.view='auth';render();}
 });
 window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{
  if(STATE.themeMode==='system'){STATE.dark=systemDark();render();}
 });
 document.addEventListener('keydown',evt=>{
- if(!STATE.logoutDialog)return;
- if(evt.key==='Escape'){evt.preventDefault();closeLogoutDialog();return;}
+ if(!STATE.logoutDialog&&!STATE.adminRoleDialog)return;
+ if(evt.key==='Escape'){evt.preventDefault();if(STATE.adminRoleDialog)closeAdminRoleDialog();else closeLogoutDialog();return;}
  if(evt.key!=='Tab')return;
  const nodes=[...ROOT.querySelectorAll('.security-modal button:not(:disabled)')];
  if(!nodes.length){evt.preventDefault();return;}
