@@ -58,6 +58,7 @@ export function createCareerModule({state,render,toast,go,icon,escapeHTML,getUse
   catch(e){if(id===me()){cvError='Riwayat CV belum dapat dibuka. Periksa migrasi SQL v0.2.0.';console.warn('IKHTIAR CV:',e?.message||e);}}
   finally{cvBusy=false;if(id===me()&&state.view==='cv')render();}
  }
+ function prepareCV(company,position){cvCompany=String(company||'').trim().slice(0,120);cvPosition=String(position||'').trim().slice(0,120);cvKeywords='';currentCV=null;}
  function open(view){if(!loaded&&!loading)load();if(view==='cv'&&!cvLoaded&&!cvBusy)loadVersions();if(view==='cv'&&!cvPosition&&profile.target_role)cvPosition=profile.target_role;}
  function progress(p=profile){
   // Optional links, phone, and work history should not penalize fresh graduates.
@@ -252,5 +253,5 @@ export function createCareerModule({state,render,toast,go,icon,escapeHTML,getUse
   return false;
  }
  async function handleSubmit(form){if(form.id==='career-form'){await save(form);return true;}if(form.id==='cv-generate-form'){await generate(form);return true;}return false;}
- return {clear,load,loadVersions,open,openPublic,publicPage,page,progress,status,cvCount:()=>versions.length,latestCV:()=>versions[0]||null,handleClick,handleSubmit,onInput,hasUnsaved:()=>dirty,syncForm};
+ return {clear,load,loadVersions,prepareCV,open,openPublic,publicPage,page,progress,status,cvCount:()=>versions.length,latestCV:()=>versions[0]||null,handleClick,handleSubmit,onInput,hasUnsaved:()=>dirty,syncForm};
 }
