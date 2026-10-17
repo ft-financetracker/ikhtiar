@@ -1,6 +1,6 @@
 import { CONFIG } from '../config.js';
-import { createCareerModule } from './career.js?v=0.3.0';
-import { createPortfolioModule } from './portfolio.js?v=0.3.0';
+import { createCareerModule } from './career.js?v=0.4.0';
+import { createPortfolioModule } from './portfolio.js?v=0.4.0';
 
 const ROOT = document.getElementById('app');
 const TOAST = document.getElementById('toast');
@@ -40,6 +40,7 @@ function go(view){
  window.scrollTo(0,0);
  if(view==='career'||view==='cv')career.open(view);
  if(view==='portfolio'||view==='portfolio-preview'||view.startsWith('p/'))portfolio.openView(view);
+ if(view.startsWith('resume/'))career.openPublic(view.slice(7));
  if(view==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();}
 }
 function setTheme(mode){
@@ -90,11 +91,11 @@ function startRoute(){
  if(STATE.session){
   STATE.demo=false;
   const requested=location.hash.replace(/^#\//,'').split('?')[0];
-  go(requested.startsWith('p/')||['settings','admin-settings','career','cv','portfolio','portfolio-preview'].includes(requested)?requested:'dashboard');
+  go(requested.startsWith('p/')||requested.startsWith('resume/')||['settings','admin-settings','career','cv','portfolio','portfolio-preview'].includes(requested)?requested:'dashboard');
   return;
  }
  const requested=location.hash.replace(/^#\//,'').split('?')[0];
- if(requested.startsWith('p/')){go(requested);return;}
+ if(requested.startsWith('p/')||requested.startsWith('resume/')){go(requested);return;}
  if(requested==='auth'){go('auth');return;}
  if(!initialSeen()){go('onboarding');return;}
  go('auth');
@@ -131,7 +132,7 @@ async function authInit(){
       const intentional=STATE.localLogoutInProgress;
       STATE.logoutDialog=false;STATE.adminRoleDialog=null;
       STATE.busyLogout=false;
-      if(!STATE.demo && STATE.authReady && STATE.splashDone && (['dashboard','settings','admin-settings','career','cv','portfolio','portfolio-preview'].includes(STATE.view)||previousSession)){
+      if(!STATE.demo && STATE.authReady && STATE.splashDone && (['dashboard','settings','admin-settings','career','cv','portfolio','portfolio-preview'].includes(STATE.view)||previousSession)&&!STATE.view.startsWith('resume/')&&!STATE.view.startsWith('p/')){
         STATE.mode='login';
         STATE.authError='';
         STATE.authNotice=intentional?'':'Sesi akun Anda telah berakhir atau telah keluar dari tab lain. Silakan masuk kembali.';
@@ -310,7 +311,7 @@ function settingsPage(){
   </div><aside class="ik-settings-aside">
    <div class="ik-settings-summary"><div class="ik-settings-userline"><div class="ik-settings-avatar">${escapeHTML(u.initials)}</div><div><strong>${escapeHTML(u.name)}</strong><small>${escapeHTML(u.email)}</small></div></div>
     <div class="ik-settings-summary-divider"></div><div class="ik-settings-summary-item"><span>Hak akses</span><strong>${isAdmin()?'Super Admin':'User'}</strong></div>
-    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.3.0</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
+    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.4.0</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
    ${!adminView&&isAdmin()?`<button class="ik-settings-admin-link" data-action="nav-admin-settings">${icon('shield')} Buka Panel Super Admin ${icon('arrow-right')}</button>`:''}
    ${adminView?`<button class="ik-settings-admin-link" data-action="nav-settings">${icon('arrow-left')} Kembali ke Pengaturan Pribadi</button>`:''}
    <div class="ik-settings-hint"><strong>${icon('lock')} Privasi tetap utama</strong><p>Pengaturan pribadimu tidak memberikan akses ke data pengguna lain. Perubahan hak Super Admin hanya berlaku setelah diverifikasi oleh Supabase.</p></div>
@@ -328,10 +329,10 @@ function settingsCardContent(id){const u=userInfo();
   <div class="ik-segment-group" role="group" aria-label="Tema aplikasi">${[['light','Terang'],['dark','Gelap'],['system','Otomatis']].map(([v,l])=>`<button type="button" class="ik-segment ${STATE.themeMode===v?'selected':''}" data-action="settings-theme" data-value="${v}" aria-pressed="${STATE.themeMode===v}">${l}</button>`).join('')}</div>
   <div class="ik-setting-option-heading"><strong>Ukuran teks</strong><p>Sesuaikan ukuran teks antarmuka dashboard dan pengaturan.</p></div><div class="ik-segment-group" role="group" aria-label="Ukuran teks">${[[1,'Normal'],[1.1,'Besar'],[1.2,'Ekstra']].map(([v,l])=>`<button type="button" class="ik-segment ${STATE.fontScale===v?'selected':''}" data-action="settings-font" data-value="${v}" aria-pressed="${STATE.fontScale===v}">${l}</button>`).join('')}</div>
   <p class="ik-setting-fineprint">Preferensi tampilan tersimpan di browser ini, bukan disinkronkan ke perangkat lain.</p></div>`;
- if(id==='privacy')return `<div class="ik-setting-readonly"><p>Data akun digunakan untuk autentikasi dan identitas pengguna. Portofolio serta CV akan memiliki pengaturan privasi tersendiri ketika modulnya dirilis.</p>
+ if(id==='privacy')return `<div class="ik-setting-readonly"><p>Data akun digunakan untuk autentikasi dan identitas pengguna. Portofolio publik dan tautan CV online memiliki kontrol privasi masing-masing. CV tetap privat sampai pemilik mengaktifkan tautannya.</p>
   <div class="ik-info-line">${icon('shield')} Role akun dan hak akses dikendalikan melalui database, bukan disimpan sebagai preferensi browser.</div>
   <div class="ik-info-line">${icon('lock')} Fitur ekspor seluruh data dan penghapusan akun mandiri belum diaktifkan. Tidak ada tombol yang menjanjikan operasi tersebut sebelum backend tersedia.</div></div>`;
- if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.3.0 — Portfolio Builder</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div></div>`;
+ if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.4.0 — CV Online & ATS</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div></div>`;
  return '';
 }
 function adminCardContent(id){
@@ -513,7 +514,7 @@ function render(){
  if(STATE.view==='portfolio'&&portfolio.hasUnsaved())portfolio.syncForm();
  document.body.classList.toggle('dark',['dashboard','settings','admin-settings','career','cv','portfolio'].includes(STATE.view)&&STATE.dark);
  document.body.classList.toggle('security-modal-open',STATE.logoutDialog||!!STATE.adminRoleDialog);
- ROOT.innerHTML=(STATE.view==='splash'?splash():STATE.view==='onboarding'?onboarding():STATE.view==='portfolio-preview'||STATE.view.startsWith('p/')?portfolio.publicPage():['dashboard','settings','admin-settings','career','cv','portfolio'].includes(STATE.view)?dashboard():auth())+logoutModal()+adminRoleConfirmModal();
+ ROOT.innerHTML=(STATE.view==='splash'?splash():STATE.view==='onboarding'?onboarding():STATE.view==='portfolio-preview'||STATE.view.startsWith('p/')?portfolio.publicPage():STATE.view.startsWith('resume/')?career.publicPage():['dashboard','settings','admin-settings','career','cv','portfolio'].includes(STATE.view)?dashboard():auth())+logoutModal()+adminRoleConfirmModal();
 }
 function openLogoutDialog(scope='local'){
  if(STATE.busyLogout || STATE.logoutDialog)return;
@@ -691,6 +692,7 @@ window.addEventListener('hashchange',()=>{
   if(!window.confirm('Profil belum disimpan. Tinggalkan halaman dan batalkan perubahan?')){location.hash='/career';return;}
  }
  if(requested.startsWith('p/')){if(STATE.view!==requested){STATE.view=requested;render();portfolio.openView(requested);}return;}
+ if(requested.startsWith('resume/')){if(STATE.view!==requested){STATE.view=requested;render();career.openPublic(requested.slice(7));}return;}
  if(['dashboard','settings','admin-settings','career','cv','portfolio','portfolio-preview'].includes(requested)){
   if(!STATE.session&&!STATE.demo){go('auth');return;}
   if(requested==='admin-settings'&&!isAdmin()){go('settings');return;}
