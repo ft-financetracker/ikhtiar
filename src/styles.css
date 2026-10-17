@@ -267,3 +267,35 @@ body.security-modal-open{overflow:hidden}
 .ik-jobs-inline-btn{border:0;background:none;font:inherit;color:#3374ec;padding:0;cursor:pointer;text-decoration:underline}
 @media(max-width:760px){.bottom-nav{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr));overflow:hidden;scroll-snap-type:none}.bottom-nav button{min-width:0;width:100%;flex:auto;overflow:hidden;text-overflow:clip;font-size:8px;gap:4px}.bottom-nav .i{width:19px;height:19px}}
 @media(max-width:350px){.bottom-nav button{font-size:7.5px;letter-spacing:-.03em}.bottom-nav .i{width:17px;height:17px}}
+
+/* M7 v0.6.0 — Trust Center + platform reporting. */
+.ik-footer-link{background:none;border:0;padding:0;color:#2864ed;cursor:pointer;font:inherit;text-decoration:underline;text-underline-offset:3px}
+.ik-export-warning{display:block;line-height:1.65;color:var(--muted);margin:12px 0 0;font-size:11px}
+.ik-admin-overview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+.ik-admin-metric{min-width:0;border:1px solid var(--line);border-radius:15px;background:var(--surface);padding:17px;display:flex;flex-direction:column;gap:7px}
+.ik-admin-metric strong{font-size:clamp(22px,2.2vw,32px);line-height:1.1;letter-spacing:-.04em;color:var(--text)}
+.ik-admin-metric span{font-size:12px;line-height:1.55;color:var(--muted)}
+.ik-admin-overview-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:18px 0;flex-wrap:wrap}
+.ik-admin-overview-foot span{font-size:11px;color:var(--muted)}
+.ik-trust-page{min-height:100vh;background:#f5f8fd;color:#142441;font-family:'Plus Jakarta Sans',sans-serif}
+.ik-trust-wrap{width:min(1080px,calc(100% - 36px));margin:0 auto}
+.ik-trust-header{background:#071833;border-bottom:1px solid #213859}.ik-trust-header-inner{min-height:82px;display:flex;justify-content:space-between;align-items:center;gap:20px}
+.ik-trust-back{border:1px solid #ffffff33;background:#ffffff12;color:#edf6ff;border-radius:12px;padding:11px 14px;font-weight:700;display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px}
+.ik-trust-back .i{width:15px;height:15px}
+.ik-trust-hero{margin:27px 0 22px;padding:clamp(26px,5vw,65px);border-radius:24px;background:radial-gradient(ellipse at 93% 15%,#22d3a75a,transparent 30%),radial-gradient(ellipse at 80% 100%,#425dff67,transparent 45%),linear-gradient(140deg,#081a39,#153367 65%,#133f76);color:#fff;overflow:hidden}
+.ik-trust-eyebrow{font-size:11px;color:#69ead0;letter-spacing:.11em;font-weight:800}
+.ik-trust-hero h1{font-size:clamp(31px,4.7vw,54px);max-width:690px;letter-spacing:-.06em;line-height:1.18;margin:21px 0}.ik-trust-hero h1 span{color:#66e4ce}
+.ik-trust-hero p{max-width:700px;color:#d0dff6;line-height:1.85;font-size:13px}
+.ik-trust-pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:26px}.ik-trust-pill-row span{border:1px solid #ffffff3f;background:#ffffff15;padding:8px 13px;border-radius:999px;font-size:11px}
+.ik-trust-status{background:#fff;border:1px solid #dce5f4;border-radius:20px;padding:19px;display:flex;align-items:flex-start;gap:15px;margin-bottom:18px}
+.ik-trust-status-icon{background:#eef3ff;color:#2563ff;padding:12px;border-radius:13px}.ik-trust-status-icon .i{height:22px;width:22px}
+.ik-trust-status strong{font-size:13px}.ik-trust-status p{margin:7px 0;overflow-wrap:anywhere}.ik-trust-status code{font-size:12px;color:#1a5cbd}.ik-trust-status small{font-size:11px;color:#667996;line-height:1.7}
+.ik-trust-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.ik-trust-card{background:white;border:1px solid #dfe7f3;border-radius:21px;padding:25px;min-width:0;box-shadow:0 10px 30px #1c37600a}
+.ik-trust-card-icon{display:grid;place-items:center;background:#eaf2ff;color:#2264ed;border-radius:13px;width:43px;height:43px}.ik-trust-card h2{font-size:17px;letter-spacing:-.03em;margin:18px 0 8px}.ik-trust-card p{font-size:12px;line-height:1.85;color:#61718d;margin:0}
+.ik-trust-section{margin:19px 0;border:1px solid #dfe7f3;border-radius:20px;padding:clamp(18px,3vw,30px);background:white}.ik-trust-section h2{font-size:20px;margin:0 0 18px}.ik-trust-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.ik-trust-facts>div{min-width:0}.ik-trust-facts strong{font-size:13px}.ik-trust-facts p,.ik-trust-section li{color:#61718d;font-size:12px;line-height:1.85}.ik-trust-section ul{padding-left:19px;margin:0}
+.ik-trust-caution{border:1px solid #ccdeef;background:#e9f5fb;display:flex;gap:12px;padding:23px;border-radius:20px;margin:19px 0}.ik-trust-caution>.i,.ik-trust-caution>div:first-child .i{width:21px;height:21px;color:#2563ff}.ik-trust-caution h2{font-size:16px;margin:0 0 7px}.ik-trust-caution p{font-size:12px;line-height:1.85;color:#3b587b;margin:0}
+.ik-trust-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#74839d;font-size:11px;padding:26px 0 35px}.ik-trust-footer button{border:0;background:none;color:#2563ff;font-size:12px;font-weight:800;display:flex;gap:6px;align-items:center;cursor:pointer}.ik-trust-page button:focus-visible{outline:3px solid #25bfb9;outline-offset:3px}
+@media(min-width:1150px){.ik-admin-overview-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.ik-trust-grid,.ik-trust-facts{grid-template-columns:1fr}.ik-trust-hero{margin-top:15px}.ik-trust-header-inner{min-height:73px}.ik-trust-card{padding:20px}}
+@media(max-width:400px){.ik-trust-wrap{width:calc(100% - 24px)}.ik-trust-header .brand small{display:none}.ik-trust-back{font-size:11px;padding:9px}.ik-trust-status{padding:14px}.ik-trust-footer{align-items:flex-start;flex-direction:column}.ik-admin-overview-grid{gap:7px}.ik-admin-metric{padding:12px}.ik-admin-metric span{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.ik-trust-page *{scroll-behavior:auto}}
