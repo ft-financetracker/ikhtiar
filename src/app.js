@@ -1,7 +1,7 @@
 import { CONFIG } from '../config.js';
-import { createCareerModule } from './career.js?v=0.5.0';
-import { createPortfolioModule } from './portfolio.js?v=0.5.0';
-import { createJobsModule } from './jobs.js?v=0.5.0';
+import { createCareerModule } from './career.js?v=0.6.0';
+import { createPortfolioModule } from './portfolio.js?v=0.6.0';
+import { createJobsModule } from './jobs.js?v=0.6.0';
 
 const ROOT = document.getElementById('app');
 const TOAST = document.getElementById('toast');
@@ -15,7 +15,7 @@ const preferredTheme=THEME_MODES.includes(savedTheme)?savedTheme:'system';
 const systemDark=()=>window.matchMedia?.('(prefers-color-scheme: dark)').matches??false;
 const FONT_SCALES=[1,1.1,1.2];
 const storedScale=Number(localStorage.getItem('ikhtiar:font-scale'));
-const STATE = {view:'splash', slide:0, mode:'login', session:null, supabase:null, authReady:false, splashDone:false, authError:'', authNotice:'', passwordVisible:false, busy:false, resendEmail:'', resendAt:0, logoutDialog:false, logoutScope:'local', busyLogout:false, localLogoutInProgress:false, sessionCheckAt:0, sessionChecking:false, demo:false, themeMode:preferredTheme, dark:preferredTheme==='dark'||(preferredTheme==='system'&&systemDark()), fontScale:FONT_SCALES.includes(storedScale)?storedScale:1, settingSection:'profile', adminSection:'platform', role:'user', roleReady:false, roleRequest:0, platformNotice:'', platformReady:false, platformBusy:false, profileBusy:false, passwordBusy:false, adminUsers:[], adminUsersTotal:0, adminUsersSearch:'', adminUsersPage:0, adminUsersBusy:false, adminUsersLoaded:false, adminUsersError:'', adminAudit:[], adminAuditBusy:false, adminAuditLoaded:false, adminAuditError:'', adminRoleDialog:null, adminRoleBusy:false, careerProfile:null};
+const STATE = {view:'splash', slide:0, mode:'login', session:null, supabase:null, authReady:false, splashDone:false, authError:'', authNotice:'', passwordVisible:false, busy:false, resendEmail:'', resendAt:0, logoutDialog:false, logoutScope:'local', busyLogout:false, localLogoutInProgress:false, sessionCheckAt:0, sessionChecking:false, demo:false, themeMode:preferredTheme, dark:preferredTheme==='dark'||(preferredTheme==='system'&&systemDark()), fontScale:FONT_SCALES.includes(storedScale)?storedScale:1, settingSection:'profile', adminSection:'platform', role:'user', roleReady:false, roleRequest:0, platformNotice:'', platformReady:false, platformBusy:false, profileBusy:false, passwordBusy:false, adminUsers:[], adminUsersTotal:0, adminUsersSearch:'', adminUsersPage:0, adminUsersBusy:false, adminUsersLoaded:false, adminUsersError:'', adminAudit:[], adminAuditBusy:false, adminAuditLoaded:false, adminAuditError:'', adminRoleDialog:null, adminRoleBusy:false, adminOverview:null, adminOverviewLoaded:false, adminOverviewBusy:false, adminOverviewError:'', dataExportBusy:false, careerProfile:null};
 const slides = [
   {tag:'01 · SHOW YOUR WORK',title:'Tunjukkan karya. <span class="grad-text">Buka peluang.</span>',desc:'Bangun portofolio profesional yang terasa seperti dirimu. Tampilkan proyek, skill, dan pencapaian melalui satu tautan yang mudah dibagikan.',top:'Portofolio Online',bottom:'Karyamu, identitasmu',caption:'Perjalanan besar dimulai dari karya kecil yang kamu banggakan.'},
   {tag:'02 · BUILT FOR YOUR CAREER',title:'CV profesional, <span class="grad-text">lebih mudah.</span>',desc:'Susun CV ATS-friendly dari profil yang sama. Pilih template minimalis, lihat pratinjau langsung, dan siapkan dokumen untuk peluang berikutnya.',top:'CV ATS Ready',bottom:'Format yang lebih rapi',caption:'Bukan sekadar terlihat bagus — informasi penting juga harus mudah ditemukan.'},
@@ -48,7 +48,7 @@ function go(view){
  if(view==='portfolio'||view==='portfolio-preview'||view.startsWith('p/'))portfolio.openView(view);
  if(['jobs','applications'].includes(view))jobs.open(view);
  if(view.startsWith('resume/'))career.openPublic(view.slice(7));
- if(view==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();}
+ if(view==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();if(STATE.adminSection==='overview')loadAdminOverview();}
 }
 function setTheme(mode){
  if(!THEME_MODES.includes(mode))return;
@@ -60,7 +60,7 @@ function setTheme(mode){
 async function loadRole(userId){
  const request=++STATE.roleRequest;
  STATE.role='user';STATE.roleReady=false;
- STATE.adminUsers=[];STATE.adminUsersLoaded=false;STATE.adminAudit=[];STATE.adminAuditLoaded=false;STATE.adminRoleDialog=null;
+ STATE.adminUsers=[];STATE.adminUsersLoaded=false;STATE.adminAudit=[];STATE.adminAuditLoaded=false;STATE.adminOverview=null;STATE.adminOverviewLoaded=false;STATE.adminRoleDialog=null;
  if(!userId||!STATE.supabase||STATE.demo){STATE.roleReady=true;return;}
  try{
   const {data,error}=await STATE.supabase.from('account_roles').select('role').eq('user_id',userId).maybeSingle();
@@ -98,11 +98,11 @@ function startRoute(){
  if(STATE.session){
   STATE.demo=false;
   const requested=location.hash.replace(/^#\//,'').split('?')[0];
-  go(requested.startsWith('p/')||requested.startsWith('resume/')||['settings','admin-settings','career','cv','portfolio','portfolio-preview','jobs','applications'].includes(requested)?requested:'dashboard');
+  go(requested==='trust'||requested.startsWith('p/')||requested.startsWith('resume/')||['settings','admin-settings','career','cv','portfolio','portfolio-preview','jobs','applications'].includes(requested)?requested:'dashboard');
   return;
  }
  const requested=location.hash.replace(/^#\//,'').split('?')[0];
- if(requested.startsWith('p/')||requested.startsWith('resume/')){go(requested);return;}
+ if(requested.startsWith('p/')||requested.startsWith('resume/')||requested==='trust'){go(requested);return;}
  if(requested==='auth'){go('auth');return;}
  if(!initialSeen()){go('onboarding');return;}
  go('auth');
@@ -136,7 +136,7 @@ async function authInit(){
     }
     if(event==='SIGNED_OUT'){
       ++STATE.roleRequest;STATE.role='user';STATE.roleReady=false;STATE.platformNotice='';STATE.platformReady=false;
-      STATE.adminUsers=[];STATE.adminUsersLoaded=false;STATE.adminUsersError='';STATE.adminAudit=[];STATE.adminAuditLoaded=false;STATE.adminAuditError='';STATE.adminRoleDialog=null;career.clear();portfolio.clear();jobs.clear();
+      STATE.adminUsers=[];STATE.adminUsersLoaded=false;STATE.adminUsersError='';STATE.adminAudit=[];STATE.adminAuditLoaded=false;STATE.adminAuditError='';STATE.adminOverview=null;STATE.adminOverviewLoaded=false;STATE.adminOverviewError='';STATE.adminRoleDialog=null;career.clear();portfolio.clear();jobs.clear();
       const intentional=STATE.localLogoutInProgress;
       STATE.logoutDialog=false;STATE.adminRoleDialog=null;
       STATE.busyLogout=false;
@@ -246,7 +246,7 @@ function auth(){const isLogin=STATE.mode==='login';const isRegister=STATE.mode==
  ${(isLogin||isRegister)?`<div class="auth-sep">atau lanjutkan dengan</div><button class="btn btn-outline btn-wide" data-action="google-login" ${!STATE.supabase||STATE.busy?'disabled':''}><span class="google-icon">G</span> Lanjutkan dengan Google</button>`:`<button class="btn btn-quiet btn-wide" style="margin-top:14px" data-action="auth-login">Kembali ke Login</button>`}
  ${!STATE.supabase?`<div class="auth-note">${icon('info')} Mode pratinjau. Login asli belum aktif hingga Supabase dikonfigurasi. Gunakan dashboard demo untuk meninjau tampilan.</div>`:''}
  <button class="btn btn-quiet btn-wide" data-action="view-demo" style="margin-top:15px">${icon('eye')} Lihat Dashboard Demo ${icon('arrow-right')}</button>
- </div><footer class="auth-foot">Prototype Foundation v0.1. Kebijakan privasi dan syarat layanan disiapkan sebelum rilis publik.<br>Mode demo tidak menyimpan data pengguna.</footer></section></main>`;
+ </div><footer class="auth-foot">IKHTIAR v0.6.0 · <button type="button" class="ik-footer-link" data-action="nav-trust">Pusat Kepercayaan & Privasi</button><br>Mode demo tidak menyimpan data pengguna ke Supabase.</footer></section></main>`;
 }
 function userInfo(){const u=STATE.session?.user;let email=u?.email||'';let meta=u?.user_metadata||{};let name=STATE.demo?'Pengguna Demo':(STATE.careerProfile?.full_name||meta.full_name||meta.name||meta.display_name||email.split('@')[0]||'Pengguna IKHTIAR');return {name,email:STATE.demo?'Akun simulasi · tanpa data asli':email, initials:String(name).trim().slice(0,1).toUpperCase()||'I'};}
 function navAction(type,title,ic,isActive=false){
@@ -294,7 +294,8 @@ const ADMIN_CARDS=[
  {id:'platform',title:'Informasi Platform',sub:'Pengumuman resmi untuk pengguna',icon:'bell'},
  {id:'users',title:'Pengguna & Role',sub:'Direktori, pencarian, dan hak akses',icon:'users'},
  {id:'job-listings',title:'Direktori Lowongan',sub:'Terbitkan lowongan dari tautan sumber resmi',icon:'briefcase'},
- {id:'audit',title:'Audit & Sistem',sub:'Riwayat tindakan dan keamanan admin',icon:'shield'}
+ {id:'audit',title:'Audit & Sistem',sub:'Riwayat tindakan dan keamanan admin',icon:'shield'},
+ {id:'overview',title:'Laporan Operasional',sub:'Indikator anonim dari seluruh platform',icon:'file'}
 ];
 function settingCard(card,expanded,admin=false){
  const active=expanded===card.id;
@@ -320,7 +321,7 @@ function settingsPage(){
   </div><aside class="ik-settings-aside">
    <div class="ik-settings-summary"><div class="ik-settings-userline"><div class="ik-settings-avatar">${escapeHTML(u.initials)}</div><div><strong>${escapeHTML(u.name)}</strong><small>${escapeHTML(u.email)}</small></div></div>
     <div class="ik-settings-summary-divider"></div><div class="ik-settings-summary-item"><span>Hak akses</span><strong>${isAdmin()?'Super Admin':'User'}</strong></div>
-    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.5.0</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
+    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.6.0</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
    ${!adminView&&isAdmin()?`<button class="ik-settings-admin-link" data-action="nav-admin-settings">${icon('shield')} Buka Panel Super Admin ${icon('arrow-right')}</button>`:''}
    ${adminView?`<button class="ik-settings-admin-link" data-action="nav-settings">${icon('arrow-left')} Kembali ke Pengaturan Pribadi</button>`:''}
    <div class="ik-settings-hint"><strong>${icon('lock')} Privasi tetap utama</strong><p>Pengaturan pribadimu tidak memberikan akses ke data pengguna lain. Perubahan hak Super Admin hanya berlaku setelah diverifikasi oleh Supabase.</p></div>
@@ -340,8 +341,9 @@ function settingsCardContent(id){const u=userInfo();
   <p class="ik-setting-fineprint">Preferensi tampilan tersimpan di browser ini, bukan disinkronkan ke perangkat lain.</p></div>`;
  if(id==='privacy')return `<div class="ik-setting-readonly"><p>Data akun digunakan untuk autentikasi dan identitas pengguna. Portofolio publik dan tautan CV online memiliki kontrol privasi masing-masing. CV tetap privat sampai pemilik mengaktifkan tautannya.</p>
   <div class="ik-info-line">${icon('shield')} Role akun dan hak akses dikendalikan melalui database, bukan disimpan sebagai preferensi browser.</div>
-  <div class="ik-info-line">${icon('lock')} Fitur ekspor seluruh data dan penghapusan akun mandiri belum diaktifkan. Tidak ada tombol yang menjanjikan operasi tersebut sebelum backend tersedia.</div></div>`;
- if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.5.0 — Lowongan & Lamaran</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div></div>`;
+  <div class="ik-setting-detail"><span class="ik-detail-label">Salinan data pribadi</span><p>Unduh salinan data yang tersimpan dalam modul Profil Karier, CV, Portofolio, Lowongan Tersimpan, dan Lamaran. Unduhan berupa JSON di perangkat Anda, bukan tautan publik.</p><button type="button" class="btn btn-outline" data-action="settings-export-data" ${STATE.demo||!STATE.session||STATE.dataExportBusy?'disabled':''}>${STATE.dataExportBusy?'Menyiapkan ekspor...':`${icon('file')} Unduh Data Saya (.json)`}</button><small class="ik-export-warning">File ekspor dapat berisi nomor telepon, pengalaman kerja, catatan lamaran, dan data sensitif. Simpan secara pribadi. Sesi login dan password tidak disertakan.</small></div>
+  <div class="ik-info-line">${icon('lock')} Penghapusan akun mandiri belum tersedia. Ekspor hanya mencakup data modul IKHTIAR yang terdaftar, bukan log internal penyedia layanan.</div><button class="btn btn-outline" type="button" data-action="nav-trust">${icon('shield')} Buka Pusat Kepercayaan</button></div>`;
+ if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.6.0 — Trust Center & Reporting</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div><div class="ik-setting-detail"><span class="ik-detail-label">Informasi resmi dan privasi</span><p>Cara kerja IKHTIAR, informasi yang dipublikasikan, dan batasan fitur keamanan.</p><button class="btn btn-outline" type="button" data-action="nav-trust">${icon('shield')} Pusat Kepercayaan</button></div></div>`;
  return '';
 }
 function adminCardContent(id){
@@ -352,6 +354,7 @@ function adminCardContent(id){
  if(id==='users')return adminUsersContent();
  if(id==='audit')return adminAuditContent();
  if(id==='job-listings')return jobs.adminPage();
+ if(id==='overview')return adminOverviewContent();
  return '';
 }
 // IKHTIAR v0.1.4 — Privileged account directory, role workflow, and audit.
@@ -519,12 +522,100 @@ function logoutModal(){
    </section>
  </div>`;
 }
+/* M7 v0.6.0: public Trust Center. Transparency content deliberately avoids unverifiable certifications and support claims. */
+function trustPage(){
+ const signedIn=!!STATE.session||STATE.demo;
+ const backLabel=signedIn?'Kembali ke Dashboard':'Kembali ke Masuk';
+ const site=escapeHTML(location.origin+location.pathname);
+ return `<main class="ik-trust-page">
+  <header class="ik-trust-header"><div class="ik-trust-wrap ik-trust-header-inner">${brand(true)}<button type="button" class="ik-trust-back" data-action="trust-back">${icon('arrow-left')} ${backLabel}</button></div></header>
+  <div class="ik-trust-wrap"><section class="ik-trust-hero"><span class="ik-trust-eyebrow">IKHTIAR / TRANSPARANSI</span><h1>Bangun karier dengan <span>lebih tenang.</span></h1><p>Ketahui cara aplikasi bekerja, kapan data Anda bisa dibagikan, serta langkah untuk menjaga keamanan akun. Informasi ini bukan sertifikat audit keamanan atau pengganti kebijakan privasi formal.</p><div class="ik-trust-pill-row"><span>Web & PWA</span><span>Profil privat</span><span>Publikasi sesuai pilihan</span></div></section>
+  <section class="ik-trust-status"><div class="ik-trust-status-icon">${icon('shield')}</div><div><strong>Alamat situs yang sedang Anda buka</strong><p><code>${site}</code></p><small>Ini adalah alamat browser saat ini, bukan bukti bahwa domain telah diverifikasi sebagai domain resmi. Periksa tautan melalui kanal resmi pengelola.</small></div></section>
+  <div class="ik-trust-grid">
+   <article class="ik-trust-card"><span class="ik-trust-card-icon">${icon('lock')}</span><h2>Login & keamanan akun</h2><p>Login dikelola menggunakan Supabase Auth. Anda dapat mengganti kata sandi melalui email dan mengakhiri sesi dari Pengaturan. Tidak ada jaminan sistem telah menjalani audit penetrasi independen.</p></article>
+   <article class="ik-trust-card"><span class="ik-trust-card-icon">${icon('user')}</span><h2>Data yang Anda isi</h2><p>Profil Karier, pendidikan, pengalaman, CV, portofolio, serta catatan lowongan dan lamaran disimpan untuk mendukung fitur IKHTIAR. Secara normal, data kerja pribadi dibatasi per akun menggunakan RLS.</p></article>
+   <article class="ik-trust-card"><span class="ik-trust-card-icon">${icon('eye')}</span><h2>Privat hingga dipublikasikan</h2><p>Portofolio dan tautan CV tidak otomatis menjadi publik. Setelah diaktifkan, siapa pun yang memiliki tautan dapat melihat data yang Anda pilih untuk ditampilkan. Matikan tautan untuk mencabut akses publik berikutnya.</p></article>
+   <article class="ik-trust-card"><span class="ik-trust-card-icon">${icon('briefcase')}</span><h2>Lowongan & perusahaan</h2><p>Lowongan yang ditampilkan admin berasal dari tautan sumber yang dicantumkan. IKHTIAR bukan pemberi kerja dan tidak dapat menjamin kebenaran lowongan, diterima bekerja, atau perkembangan status seleksi.</p></article>
+  </div>
+  <section class="ik-trust-section"><h2>Infrastruktur & distribusi</h2><div class="ik-trust-facts"><div><strong>Frontend & PWA</strong><p>GitHub Pages, dapat digunakan di browser dan dipasang di layar utama HP. Tidak harus tersedia di Play Store.</p></div><div><strong>Identitas & database</strong><p>Supabase Auth dan PostgreSQL. Aplikasi frontend tidak seharusnya menyimpan kunci service_role.</p></div><div><strong>CV dan portofolio</strong><p>CV publik dan portofolio publik merupakan fitur pilihan pengguna, bukan verifikasi sertifikat profesional.</p></div></div></section>
+  <section class="ik-trust-section"><h2>Kontrol data & batasan yang terbuka</h2><ul><li>Data profil dan lamaran dapat diperbarui dari menu pemilik masing-masing.</li><li>Di Pengaturan → Privasi & Data, pengguna login dapat mengunduh salinan data modul dalam JSON.</li><li>Penghapusan akun mandiri, permintaan data dari penyedia eksternal, dan kebijakan retensi formal belum disediakan pada tahap ini.</li><li>Kontak dukungan resmi, syarat layanan, kebijakan privasi yang ditinjau, serta uji keamanan produksi harus diselesaikan sebelum peluncuran publik.</li></ul></section>
+  <section class="ik-trust-caution"><div>${icon('info')}</div><div><h2>Tips menghindari penipuan rekrutmen</h2><p>Verifikasi alamat perusahaan dan sumber lowongan. Jangan membagikan OTP, kata sandi, atau kode pemulihan kepada pihak yang mengaku sebagai admin atau perekrut. Untuk kasus mencurigakan, hentikan proses dan periksa melalui kanal resmi perusahaan.</p></div></section>
+  <footer class="ik-trust-footer"><span>IKHTIAR · Your Career, Your Move. · v0.6.0</span><button type="button" data-action="trust-back">${backLabel} ${icon('arrow-right')}</button></footer></div>
+ </main>`;
+}
+const IK_EXPORT_TABLES=[
+ ['career_profile','ik_career_profiles'],['cv_versions','ik_cv_versions'],['cv_shares','ik_cv_shares'],
+ ['portfolio_site','ik_portfolio_sites'],['portfolio_projects','ik_portfolio_projects'],
+ ['saved_jobs','ik_saved_jobs'],['job_applications','ik_job_applications']
+];
+function ikDownloadText(name,content,mime){
+ const objectUrl=URL.createObjectURL(new Blob([content],{type:mime}));
+ const a=document.createElement('a');a.href=objectUrl;a.download=name;document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(objectUrl),5000);
+}
+async function exportMyData(){
+ if(!STATE.supabase||!STATE.session||STATE.demo||STATE.dataExportBusy)return;
+ const owner=STATE.session.user.id;
+ STATE.dataExportBusy=true;render();
+ try{
+  // Every query is owner-filtered and additionally checked by Supabase RLS.
+  // Abort the entire download if ANY module fails: never pass an incomplete archive as a full export.
+  const result={export_format:'IKHTIAR-v0.6.0',exported_at:new Date().toISOString(),scope:'IKHTIAR application modules; excludes provider logs, credentials and session tokens',account:{user_id:owner,email:STATE.session.user.email||'',created_at:STATE.session.user.created_at||null,confirmed_at:STATE.session.user.email_confirmed_at||null},data:{}};
+  for(const [name,table] of IK_EXPORT_TABLES){
+   const {data,error}=await STATE.supabase.from(table).select('*').eq('user_id',owner);
+   if(error)throw new Error(`Tidak dapat membaca data ${name}. ${error.message||''}`);
+   if(STATE.session?.user?.id!==owner)throw new Error('Akun berubah selama ekspor. Ulangi setelah login.');
+   result.data[name]=data||[];
+  }
+  const date=new Date().toISOString().slice(0,10);
+  ikDownloadText(`IKHTIAR-data-saya-${date}.json`,JSON.stringify(result,null,2),'application/json;charset=utf-8');
+  toast('Data pribadi telah disiapkan untuk diunduh. Simpan file dengan aman.');
+ }catch(error){toast(error?.message||'Ekspor data gagal. Coba lagi.');}
+ finally{STATE.dataExportBusy=false;if(STATE.view==='settings')render();}
+}
+const ADMIN_OVERVIEW_ITEMS=[
+ ['users','Akun Terdaftar'],['career_profiles','Profil Karier'],['cv_versions','CV Dibuat'],
+ ['active_cv_links','CV Online Aktif'],['portfolio_projects','Total Karya'],['public_portfolios','Portofolio Publik'],
+ ['published_jobs','Lowongan Aktif'],['saved_jobs','Lowongan Tersimpan'],['applications','Total Lamaran Tercatat'],
+ ['ongoing_applications','Lamaran Berproses']
+];
+function adminOverviewContent(){
+ const x=STATE.adminOverview;
+ return `<div class="ik-admin-overview"><p class="ik-settings-description">Ringkasan agregat dari database. Tidak menampilkan nama, email, isi CV, atau isi lamaran pengguna. Statistik merupakan kondisi saat data diperiksa, bukan analitik kunjungan real-time.</p>
+ <div class="ik-admin-list-heading"><strong>Statistik Platform</strong><button type="button" class="ik-admin-refresh" data-action="admin-overview-refresh" ${STATE.adminOverviewBusy?'disabled':''}>${icon('settings')} Perbarui</button></div>
+ ${STATE.adminOverviewError?`<div class="ik-setting-warning" role="alert">${escapeHTML(STATE.adminOverviewError)}. Pastikan SQL M7 sudah dijalankan.</div>`:''}
+ ${STATE.adminOverviewBusy?'<div class="ik-admin-empty" role="status">Menghitung ringkasan...</div>':!STATE.adminOverviewLoaded?'<div class="ik-admin-empty">Ringkasan belum dimuat. Buka kartu ini setelah SQL M7 tersedia.</div>':`<div class="ik-admin-overview-grid">${ADMIN_OVERVIEW_ITEMS.map(([key,label])=>`<div class="ik-admin-metric"><strong>${Number(x?.[key]||0).toLocaleString('id-ID')}</strong><span>${label}</span></div>`).join('')}</div><div class="ik-admin-overview-foot"><span>Data diambil: ${escapeHTML(adminDate(x?.generated_at))}</span><button type="button" class="btn btn-outline" data-action="admin-overview-export">${icon('file')} Unduh CSV Ringkasan</button></div>`}
+ <div class="ik-info-line">${icon('shield')} Angka dihitung melalui fungsi Supabase yang memverifikasi role Super Admin pada server. Rekap tidak mengubah data pengguna.</div></div>`;
+}
+async function loadAdminOverview(){
+ if(!isAdmin()||!STATE.supabase||STATE.adminOverviewBusy)return;
+ const owner=STATE.session.user.id;
+ STATE.adminOverviewBusy=true;STATE.adminOverviewError='';
+ if(STATE.view==='admin-settings')render();
+ try{
+  const {data,error}=await STATE.supabase.rpc('ik_admin_overview');
+  if(error)throw error;
+  if(!isAdmin()||STATE.session?.user?.id!==owner)return;
+  STATE.adminOverview=data||{};STATE.adminOverviewLoaded=true;
+ }catch(error){
+  if(STATE.session?.user?.id!==owner)return;
+  STATE.adminOverview=null;STATE.adminOverviewLoaded=false;
+  STATE.adminOverviewError='Tidak dapat memuat laporan agregat';
+  console.warn('IKHTIAR M7 report:',error?.message||error);
+ }finally{STATE.adminOverviewBusy=false;if(STATE.view==='admin-settings'&&STATE.adminSection==='overview')render();}
+}
+function exportAdminOverview(){
+ if(!isAdmin()||!STATE.adminOverviewLoaded||!STATE.adminOverview)return;
+ const rows=[['Indikator','Jumlah'],...ADMIN_OVERVIEW_ITEMS.map(([key,label])=>[label,String(Number(STATE.adminOverview[key]||0))])];
+ const csv='\uFEFF'+rows.map(([a,b])=>`"${String(a).replace(/"/g,'""')}","${String(b).replace(/"/g,'""')}"`).join('\r\n');
+ ikDownloadText('IKHTIAR-ringkasan-operasional-'+new Date().toISOString().slice(0,10)+'.csv',csv,'text/csv;charset=utf-8');
+}
 function render(){
  if(STATE.view==='career'&&career.hasUnsaved())career.syncForm();
  if(STATE.view==='portfolio'&&portfolio.hasUnsaved())portfolio.syncForm();
  document.body.classList.toggle('dark',['dashboard','settings','admin-settings','career','cv','portfolio','jobs','applications'].includes(STATE.view)&&STATE.dark);
  document.body.classList.toggle('security-modal-open',STATE.logoutDialog||!!STATE.adminRoleDialog);
- ROOT.innerHTML=(STATE.view==='splash'?splash():STATE.view==='onboarding'?onboarding():STATE.view==='portfolio-preview'||STATE.view.startsWith('p/')?portfolio.publicPage():STATE.view.startsWith('resume/')?career.publicPage():['dashboard','settings','admin-settings','career','cv','portfolio','jobs','applications'].includes(STATE.view)?dashboard():auth())+logoutModal()+adminRoleConfirmModal();
+ ROOT.innerHTML=(STATE.view==='trust'?trustPage():STATE.view==='splash'?splash():STATE.view==='onboarding'?onboarding():STATE.view==='portfolio-preview'||STATE.view.startsWith('p/')?portfolio.publicPage():STATE.view.startsWith('resume/')?career.publicPage():['dashboard','settings','admin-settings','career','cv','portfolio','jobs','applications'].includes(STATE.view)?dashboard():auth())+logoutModal()+adminRoleConfirmModal();
 }
 function openLogoutDialog(scope='local'){
  if(STATE.busyLogout || STATE.logoutDialog)return;
@@ -625,6 +716,11 @@ ROOT.addEventListener('click',async evt=>{
  const actionEl=evt.target.closest('[data-action]');if(!actionEl)return;
  const action=actionEl.dataset.action;
  if(action==='brand-home'){evt.preventDefault();go(STATE.demo||STATE.session?'dashboard':'auth');}
+ if(action==='nav-trust')go('trust');
+ if(action==='trust-back')go(STATE.demo||STATE.session?'dashboard':'auth');
+ if(action==='settings-export-data')await exportMyData();
+ if(action==='admin-overview-refresh'&&isAdmin())await loadAdminOverview();
+ if(action==='admin-overview-export'&&isAdmin())exportAdminOverview();
  if(action==='skip-splash'){STATE.splashDone=true;startRoute();}
  if(action==='finish-onboard')finishOnboarding();
  if(action==='prev-slide'){STATE.slide=Math.max(0,STATE.slide-1);render();}
@@ -654,7 +750,7 @@ ROOT.addEventListener('click',async evt=>{
  }
  if(action==='admin-section'&&isAdmin()){
   const id=actionEl.dataset.section;
-  if(ADMIN_CARDS.some(c=>c.id===id)){STATE.adminSection=STATE.adminSection===id?'':id;render();if(STATE.adminSection==='users'&&!STATE.adminUsersLoaded)loadAdminUsers();if(STATE.adminSection==='audit'&&!STATE.adminAuditLoaded)loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();}
+  if(ADMIN_CARDS.some(c=>c.id===id)){STATE.adminSection=STATE.adminSection===id?'':id;render();if(STATE.adminSection==='users'&&!STATE.adminUsersLoaded)loadAdminUsers();if(STATE.adminSection==='audit'&&!STATE.adminAuditLoaded)loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();if(STATE.adminSection==='overview'&&!STATE.adminOverviewLoaded)loadAdminOverview();}
  }
  if(action==='admin-refresh-users'&&isAdmin())await loadAdminUsers();
  if(action==='admin-refresh-audit'&&isAdmin())await loadAdminAudit();
@@ -697,6 +793,7 @@ ROOT.addEventListener('submit',async evt=>{
 window.addEventListener('hashchange',()=>{
  if(!STATE.authReady||!STATE.splashDone)return;
  const requested=location.hash.replace(/^#\//,'').split('?')[0];
+ if(requested==='trust'){if(STATE.view!=='trust')go('trust');return;}
  if(STATE.view==='portfolio'&&requested!=='portfolio'&&STATE.session&&portfolio.hasUnsaved()){
   if(!window.confirm(portfolio.dirtyWarning())){location.hash='/portfolio';return;}
   portfolio.discard();
@@ -712,7 +809,7 @@ window.addEventListener('hashchange',()=>{
  if(['dashboard','settings','admin-settings','career','cv','portfolio','portfolio-preview','jobs','applications'].includes(requested)){
   if(!STATE.session&&!STATE.demo){go('auth');return;}
   if(requested==='admin-settings'&&!isAdmin()){go('settings');return;}
-  if(STATE.view!==requested){STATE.view=requested;render();if(['career','cv'].includes(requested))career.open(requested);if(['portfolio','portfolio-preview'].includes(requested))portfolio.openView(requested);if(['jobs','applications'].includes(requested))jobs.open(requested);if(requested==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();}}
+  if(STATE.view!==requested){STATE.view=requested;render();if(['career','cv'].includes(requested))career.open(requested);if(['portfolio','portfolio-preview'].includes(requested))portfolio.openView(requested);if(['jobs','applications'].includes(requested))jobs.open(requested);if(requested==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();if(STATE.adminSection==='overview')loadAdminOverview();}}
  }else if(requested==='auth'&&!STATE.session&&STATE.view!=='auth'){STATE.view='auth';render();}
 });
 window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{
