@@ -4,6 +4,6 @@
  * kredensial Google, atau token Apps Script pribadi di sini.
  */
 export const CONFIG = {
-  supabaseUrl: '', https://qowmujtyrczvdborudps.supabase.co
-  supabaseAnonKey: '', sb_publishable_wXjQ7aOAOE3swUm6l9xUMw_HJLqAn-k
+  supabaseUrl: 'https://qowmujtyrczvdborudps.supabase.co',
+  supabaseAnonKey: 'sb_publishable_wXjQ7aOAOE3swUm6l9xUMw_HJLqAn-k',
 };
