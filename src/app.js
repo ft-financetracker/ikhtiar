@@ -143,8 +143,7 @@ function auth(){const isLogin=STATE.mode==='login';const isRegister=STATE.mode==
  ${isRegister?field('fullName','Nama lengkap','text','user','name'):''}
  ${isNewPassword?'':field('email','Alamat email','email','mail','email')}
  ${(!isForgot&&!isVerify)?field('password',isNewPassword?'Kata sandi baru':'Kata sandi','password','lock',isNewPassword?'new-password':isRegister?'new-password':'current-password'):''}
- ${isLogin?`<div class="auth-help"><button type="button" class="text-btn" data-action="auth-forgot">Lupa kata sandi?</button></div>`:''}
- ${isLogin||isRegister?`<div class="auth-help" style="margin-top:10px"><button type="button" class="text-btn" data-action="auth-verify">Kirim ulang email verifikasi</button></div>`:''}
+ ${(isLogin||isRegister)?`<div class="auth-help-row">${isLogin?`<button type="button" class="text-btn" data-action="auth-forgot">Lupa kata sandi?</button>`:'<span aria-hidden="true"></span>'}<button type="button" class="text-btn" data-action="auth-verify">Kirim ulang email verifikasi</button></div>`:''}
  <button class="btn btn-primary btn-lg btn-wide" type="submit" ${!STATE.supabase||STATE.busy?'disabled':''}>${STATE.busy?'Memproses...':isLogin?'Masuk ke Dashboard':isRegister?'Buat Akun':isForgot?'Kirim Link Pemulihan':isVerify?'Kirim Tautan Verifikasi':'Simpan Kata Sandi'} ${icon('arrow-right')}</button>
  </form>
  ${(isLogin||isRegister)?`<div class="auth-sep">atau lanjutkan dengan</div><button class="btn btn-outline btn-wide" data-action="google-login" ${!STATE.supabase||STATE.busy?'disabled':''}><span class="google-icon">G</span> Lanjutkan dengan Google</button>`:`<button class="btn btn-quiet btn-wide" style="margin-top:14px" data-action="auth-login">Kembali ke Login</button>`}
@@ -340,6 +339,38 @@ function init(){
  authInit();
  setTimeout(()=>{STATE.splashDone=true;startRoute()},1200);
  setInterval(checkSession,5*60_000);
- if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('SW:',err.message)));
+ if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')){
+  window.addEventListener('load',async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});
+      let acceptingUpdate=false;
+      const showUpdate=()=>{
+        if(!reg.waiting || !navigator.serviceWorker.controller || document.getElementById('ik-update-banner'))return;
+        const bar=document.createElement('aside');
+        bar.id='ik-update-banner';bar.className='ik-update-banner';bar.setAttribute('role','status');
+        bar.innerHTML='<span>Versi baru IKHTIAR tersedia.</span><button type="button" id="ik-update-apply">Perbarui sekarang</button><button type="button" id="ik-update-later" aria-label="Nanti">Nanti</button>';
+        document.body.append(bar);
+        bar.querySelector('#ik-update-later').addEventListener('click',()=>bar.remove());
+        bar.querySelector('#ik-update-apply').addEventListener('click',()=>{
+          acceptingUpdate=true;bar.querySelector('#ik-update-apply').disabled=true;
+          reg.waiting?.postMessage({type:'SKIP_WAITING'});
+        });
+      };
+      navigator.serviceWorker.addEventListener('controllerchange',()=>{
+        if(acceptingUpdate)location.reload();
+      });
+      reg.addEventListener('updatefound',()=>{
+        const worker=reg.installing;
+        worker?.addEventListener('statechange',()=>{if(worker.state==='installed')showUpdate();});
+      });
+      showUpdate();
+      const check=()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{});};
+      document.addEventListener('visibilitychange',check);
+      window.addEventListener('focus',check);
+      setInterval(check,60*60*1000);
+      check();
+    }catch(err){console.warn('SW:',err.message);}
+  });
+}
 }
 init();
