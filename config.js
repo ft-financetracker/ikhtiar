@@ -4,6 +4,6 @@
  * kredensial Google, atau token Apps Script pribadi di sini.
  */
 export const CONFIG = {
-  supabaseUrl: '', // contoh: https://xxxxxxxx.supabase.co
-  supabaseAnonKey: '', // legacy anon atau publishable key yang aman untuk client
+  supabaseUrl: '', https://qowmujtyrczvdborudps.supabase.co
+  supabaseAnonKey: '', sb_publishable_wXjQ7aOAOE3swUm6l9xUMw_HJLqAn-k
 };
