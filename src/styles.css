@@ -91,3 +91,42 @@ body.security-modal-open{overflow:hidden}
 @media(max-width:600px){.ik-settings-mobile-admin{display:inline-flex}.ik-settings-heading{margin-bottom:16px}.ik-settings-grid{gap:12px}.ik-settings-aside{grid-template-columns:1fr}.ik-settings-admin-link,.ik-settings-hint{grid-column:auto}.ik-setting-toggle{padding:14px 12px;gap:11px}.ik-setting-icon{width:36px;height:36px;flex-basis:36px}.ik-setting-panel{padding:16px 13px 18px}.ik-security-actions{flex-direction:column;align-items:stretch}.ik-security-actions .btn{width:100%}.ik-setting-actions .btn{width:100%}.ik-segment{font-size:10px;padding:10px 3px}}
 @media(max-width:360px){.ik-setting-heading strong{font-size:11px}.ik-setting-heading small{font-size:9px}.ik-segment{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.ik-setting-panel{animation:none}.ik-setting-card,.ik-setting-chevron{transition:none}}
+
+
+/* IKHTIAR v0.1.4 — Super Admin directory, access controls and audit. */
+.ik-admin-users,.ik-admin-audit{display:grid;gap:15px;min-width:0}
+.ik-admin-search{display:grid;gap:7px;min-width:0}.ik-admin-search-label{font-size:11px;font-weight:800;color:var(--text)}
+.ik-admin-search-row{display:flex;gap:9px;align-items:stretch;min-width:0}
+.ik-admin-search-row input{min-width:0;flex:1;width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);color:var(--text);font-size:11px}
+.ik-admin-search-row .btn{min-height:41px;flex:none;padding:0 14px;font-size:11px;border-radius:10px}
+.ik-admin-list-heading{display:flex;gap:9px;align-items:center;justify-content:space-between;color:var(--text);font-weight:800;font-size:11px}
+.ik-admin-refresh{display:inline-flex;gap:5px;align-items:center;background:transparent;border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--muted);font-size:10px;font-weight:700}
+.ik-admin-refresh .i,.ik-admin-search-row .i{width:14px;height:14px}
+.ik-admin-user-list,.ik-admin-audit-list{display:grid;gap:8px}
+.ik-admin-user-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;padding:13px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--soft) 15%,var(--surface))}
+.ik-admin-user-main{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.ik-admin-mini-avatar{flex:0 0 35px;width:35px;height:35px;border-radius:10px;background:linear-gradient(135deg,#2563ff,#11bca7);display:grid;place-items:center;color:#fff;font-size:12px;font-weight:800}
+.ik-admin-user-identity{min-width:0;display:grid;gap:3px;line-height:1.45}
+.ik-admin-user-identity strong{min-width:0;overflow-wrap:anywhere;font-size:11px;color:var(--text)}
+.ik-admin-user-identity small,.ik-admin-user-date{overflow-wrap:anywhere;font-size:10px;color:var(--muted)}
+.ik-admin-self{font-weight:600;color:#4d8cf6}
+.ik-admin-user-controls{display:grid;justify-items:end;gap:8px;flex:0 0 auto}
+.ik-admin-badge{display:inline-flex;border-radius:99px;padding:5px 9px;background:var(--soft);border:1px solid var(--line);font-size:9px;font-weight:800;color:var(--muted);white-space:nowrap}
+.ik-admin-badge-admin{background:rgba(74,111,255,.12);border-color:rgba(74,111,255,.25);color:color-mix(in srgb,var(--blue) 85%,var(--text))}
+.ik-admin-role-button{border:1px solid rgba(51,112,246,.32);background:transparent;color:var(--text);padding:8px 10px;border-radius:8px;font-size:10px;font-weight:800;white-space:nowrap}
+.ik-admin-role-button.is-revoke{border-color:rgba(220,83,106,.35);color:#cf536a}
+.ik-admin-role-button:disabled{opacity:.48;cursor:not-allowed}
+.ik-admin-pagination{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ik-admin-pagination small{font-size:10px;color:var(--muted)}.ik-admin-pagination>div{display:flex;gap:7px}
+.ik-admin-page{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-size:10px;font-weight:700;color:var(--text)}
+.ik-admin-page .i{width:12px;height:12px}.ik-admin-page:disabled{opacity:.4;cursor:not-allowed}
+.ik-admin-empty{padding:20px;text-align:center;font-size:11px;line-height:1.8;color:var(--muted);background:var(--soft);border:1px dashed var(--line);border-radius:11px}
+.ik-admin-audit-row{display:flex;align-items:flex-start;gap:10px;padding:12px 13px;border:1px solid var(--line);border-radius:11px;min-width:0}
+.ik-admin-audit-icon{flex:0 0 31px;width:31px;height:31px;display:grid;place-items:center;border-radius:9px;background:var(--soft);color:var(--blue)}
+.ik-admin-audit-icon .i{width:16px;height:16px}.ik-admin-audit-copy{min-width:0;display:grid;gap:4px}
+.ik-admin-audit-copy strong{font-size:11px;color:var(--text)}.ik-admin-audit-copy p{margin:0;color:var(--muted);font-size:10px;line-height:1.65;overflow-wrap:anywhere}
+.ik-admin-audit-copy small{font-size:9px;color:var(--muted);line-height:1.65;overflow-wrap:anywhere}
+.ik-admin-revoke-confirm{background:#bd3557!important;color:#fff!important;border:1px solid #e66c82!important}
+.ik-admin-modal-overlay .security-modal strong{color:#fff;overflow-wrap:anywhere}
+@media(max-width:600px){.ik-admin-user-row{align-items:flex-start}.ik-admin-user-controls{align-items:end}.ik-admin-search-row{gap:6px}.ik-admin-search-row .btn{padding:0 10px}}
+@media(max-width:390px){.ik-admin-user-row{flex-direction:column;align-items:stretch}.ik-admin-user-controls{display:flex;justify-content:space-between;align-items:center}.ik-admin-mini-avatar{width:32px;flex-basis:32px;height:32px}.ik-admin-role-button{white-space:normal;text-align:center}}
