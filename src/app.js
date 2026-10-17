@@ -6,7 +6,7 @@ const icon = (id, css = '') => `<svg class="i ${css}" aria-hidden="true"><use hr
 const escapeHTML = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const brand = (invert=false) => `<a href="#/auth" data-action="brand-home" class="brand ${invert?'invert':''}" aria-label="IKHTIAR"><img src="./assets/brand/logo-mark.png" alt=""><span><strong>IKHTIAR</strong><small>Your Career, Your Move.</small></span></a>`;
 const initialSeen = () => localStorage.getItem('ikhtiar:onboarding:done') === '1';
-const STATE = {view:'splash', slide:0, mode:'login', session:null, supabase:null, authReady:false, splashDone:false, authError:'', authNotice:'', passwordVisible:false, busy:false, resendEmail:'', resendAt:0, demo:false, dark:localStorage.getItem('ikhtiar:theme')==='dark'};
+const STATE = {view:'splash', slide:0, mode:'login', session:null, supabase:null, authReady:false, splashDone:false, authError:'', authNotice:'', passwordVisible:false, busy:false, resendEmail:'', resendAt:0, logoutDialog:false, busyLogout:false, localLogoutInProgress:false, sessionCheckAt:0, sessionChecking:false, demo:false, dark:localStorage.getItem('ikhtiar:theme')==='dark'};
 const slides = [
   {tag:'01 · SHOW YOUR WORK',title:'Tunjukkan karya. <span class="grad-text">Buka peluang.</span>',desc:'Bangun portofolio profesional yang terasa seperti dirimu. Tampilkan proyek, skill, dan pencapaian melalui satu tautan yang mudah dibagikan.',top:'Portofolio Online',bottom:'Karyamu, identitasmu',caption:'Perjalanan besar dimulai dari karya kecil yang kamu banggakan.'},
   {tag:'02 · BUILT FOR YOUR CAREER',title:'CV profesional, <span class="grad-text">lebih mudah.</span>',desc:'Susun CV ATS-friendly dari profil yang sama. Pilih template minimalis, lihat pratinjau langsung, dan siapkan dokumen untuk peluang berikutnya.',top:'CV ATS Ready',bottom:'Format yang lebih rapi',caption:'Bukan sekadar terlihat bagus — informasi penting juga harus mudah ditemukan.'},
@@ -29,17 +29,86 @@ async function authInit(){
   const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
   const supabase=createClient(CONFIG.supabaseUrl.trim(),CONFIG.supabaseAnonKey.trim(),{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   STATE.supabase=supabase;
+  // Supabase synchronizes auth state across tabs that share this browser's storage.
+  // A login from a different device does NOT automatically revoke this session.
   supabase.auth.onAuthStateChange((event,session)=>{
+    const previousSession=STATE.session;
     STATE.session=session;
-    if(event==='PASSWORD_RECOVERY'){STATE.mode='newPassword';go('auth');return;}
-    if(event==='SIGNED_IN' && STATE.authReady && STATE.splashDone && STATE.view!=='dashboard')go('dashboard');
-    if(event==='SIGNED_OUT' && STATE.view==='dashboard'){STATE.demo=false;go('auth');}
+    if(event==='PASSWORD_RECOVERY'){
+      STATE.logoutDialog=false;
+      STATE.mode='newPassword';
+      go('auth');
+      return;
+    }
+    if(event==='SIGNED_OUT'){
+      const intentional=STATE.localLogoutInProgress;
+      STATE.logoutDialog=false;
+      STATE.busyLogout=false;
+      if(!STATE.demo && STATE.authReady && STATE.splashDone && (STATE.view==='dashboard'||previousSession)){
+        STATE.mode='login';
+        STATE.authError='';
+        STATE.authNotice=intentional?'':'Sesi akun Anda telah berakhir atau telah keluar dari tab lain. Silakan masuk kembali.';
+        go('auth');
+      }
+      return;
+    }
+    if(event==='SIGNED_IN' && session && STATE.authReady && STATE.splashDone && STATE.view!=='dashboard' && STATE.mode!=='newPassword'){
+      STATE.authNotice='';
+      STATE.authError='';
+      go('dashboard');
+      return;
+    }
+    if(event==='USER_UPDATED' && session && STATE.view==='dashboard' && !STATE.logoutDialog)render();
   });
   const {data,error}=await supabase.auth.getSession();
   if(error) throw error;
   STATE.session=data.session;
  }catch(err){STATE.authError='Tidak dapat menghubungkan layanan login. Periksa koneksi internet dan konfigurasi Supabase.';console.warn('IKHTIAR auth initialization:',err?.message||err);}
  STATE.authReady=true;startRoute();
+}
+// Check server-side session validity on focus/return to tab. Offline/network errors are
+// never treated as evidence of compromise or grounds for forced logout.
+function invalidSessionError(error){
+ if(!error)return false;
+ const code=String(error.code||'').toLowerCase();
+ const name=String(error.name||'');
+ const message=String(error.message||'');
+ return name==='AuthSessionMissingError' ||
+   ['session_not_found','refresh_token_not_found','refresh_token_already_used','invalid_jwt'].includes(code) ||
+   (Number(error.status)===401 && /jwt|refresh token|session|invalid token/i.test(message));
+}
+async function checkSession(){
+ if(!STATE.supabase||!STATE.authReady||!STATE.session||STATE.demo||STATE.sessionChecking||!navigator.onLine||document.visibilityState==='hidden')return;
+ const now=Date.now();
+ if(now-STATE.sessionCheckAt<60_000)return;
+ STATE.sessionCheckAt=now;
+ STATE.sessionChecking=true;
+ try{
+   const {data,error}=await STATE.supabase.auth.getUser();
+   if(error){
+     if(invalidSessionError(error)){
+       // Local sign-out clears this browser's credentials only. If the token is
+       // already invalid, show login even if Supabase cannot contact the server.
+       try{await STATE.supabase.auth.signOut({scope:'local'});}catch(e){console.warn('IKHTIAR sign-out:',e?.message||e);}
+       STATE.session=null;
+       STATE.logoutDialog=false;
+       STATE.mode='login';
+       STATE.authError='';
+       STATE.authNotice='Sesi login sudah tidak berlaku. Silakan masuk kembali.';
+       if(STATE.view==='dashboard')go('auth');
+     }else{
+       console.warn('IKHTIAR session check unavailable:',error?.message||error);
+     }
+   }else if(data?.user && STATE.session?.user && data.user.id!==STATE.session.user.id){
+     STATE.session=null;
+     STATE.logoutDialog=false;
+     STATE.mode='login';
+     STATE.authError='';
+     STATE.authNotice='Identitas sesi berubah. Silakan masuk kembali.';
+     go('auth');
+   }
+ }catch(error){console.warn('IKHTIAR session check:',error?.message||error);}
+ finally{STATE.sessionChecking=false;}
 }
 function splash(){return `<main class="splash" aria-label="IKHTIAR sedang dimuat">
  <button class="splash-skip" data-action="skip-splash">Lewati intro ${icon('arrow-right')}</button>
@@ -112,7 +181,39 @@ function dashboard(){const u=userInfo();const sample=STATE.demo;const count=samp
  </div></div>
  <nav class="bottom-nav" aria-label="Navigasi bawah">${[['home','Beranda','nav-dashboard'],['briefcase','Loker','placeholder'],['file','CV','placeholder'],['user','Profil','placeholder']].map(([ic,label,act],idx)=>`<button class="${idx===0?'active':''}" data-action="${act}" ${act==='placeholder'?`data-label="${label}"`:''}>${icon(ic)}${label}</button>`).join('')}</nav></main>`;
 }
-function render(){document.body.classList.toggle('dark',STATE.view==='dashboard'&&STATE.dark);ROOT.innerHTML=STATE.view==='splash'?splash():STATE.view==='onboarding'?onboarding():STATE.view==='dashboard'?dashboard():auth();}
+function logoutModal(){
+ if(!STATE.logoutDialog)return '';
+ const pending=STATE.busyLogout;
+ return `<div class="security-modal-backdrop" data-action="logout-backdrop">
+   <section class="security-modal" role="dialog" aria-modal="true" aria-labelledby="logout-dialog-title" aria-describedby="logout-dialog-description">
+     <div class="security-modal-header"><span class="security-modal-symbol">${icon('log-out')}</span>
+       <button type="button" class="security-modal-close" data-action="cancel-logout" aria-label="Tutup dialog" ${pending?'disabled':''}>×</button></div>
+     <h2 id="logout-dialog-title">Keluar dari IKHTIAR?</h2>
+     <p id="logout-dialog-description">${STATE.demo?'Anda akan keluar dari dashboard demo.':'Sesi akun di browser ini akan diakhiri. Anda perlu masuk lagi untuk membuka dashboard.'}</p>
+     <div class="security-modal-actions">
+       <button type="button" class="btn security-modal-cancel" data-action="cancel-logout" ${pending?'disabled':''}>Batal</button>
+       <button type="button" class="btn security-modal-confirm" data-action="confirm-logout" ${pending?'disabled':''}>${pending?'Sedang keluar...':`${icon('log-out')} Ya, Keluar`}</button>
+     </div>
+   </section>
+ </div>`;
+}
+function render(){
+ document.body.classList.toggle('dark',STATE.view==='dashboard'&&STATE.dark);
+ document.body.classList.toggle('security-modal-open',STATE.logoutDialog);
+ ROOT.innerHTML=(STATE.view==='splash'?splash():STATE.view==='onboarding'?onboarding():STATE.view==='dashboard'?dashboard():auth())+logoutModal();
+}
+function openLogoutDialog(){
+ if(STATE.busyLogout || STATE.logoutDialog)return;
+ STATE.logoutDialog=true;
+ render();
+ ROOT.querySelector('[data-action="cancel-logout"]')?.focus();
+}
+function closeLogoutDialog(){
+ if(!STATE.logoutDialog||STATE.busyLogout)return;
+ STATE.logoutDialog=false;
+ render();
+ ROOT.querySelector('[data-action="logout"]')?.focus();
+}
 function finishOnboarding(){localStorage.setItem('ikhtiar:onboarding:done','1');STATE.mode='login';STATE.authNotice='';STATE.authError='';go('auth');}
 function setMode(mode){STATE.mode=mode;STATE.authNotice='';STATE.authError='';STATE.passwordVisible=false;render();}
 async function loginSubmit(form){
@@ -167,7 +268,34 @@ async function resendVerification(form){
  }finally{STATE.busy=false;render();}
 }
 async function googleLogin(){if(!STATE.supabase){toast('Supabase belum dikonfigurasi.');return;}try{const {error}=await STATE.supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error)throw error;}catch(e){STATE.authError='oauth';STATE.authNotice=e?.message||'Tidak dapat masuk dengan Google.';render();}}
-async function logout(){if(STATE.demo){STATE.demo=false;go('auth');return;}if(STATE.supabase){const {error}=await STATE.supabase.auth.signOut();if(error){toast('Logout gagal. Coba lagi.');return;}}STATE.session=null;go('auth');}
+async function confirmLogout(){
+ if(STATE.busyLogout||!STATE.logoutDialog)return;
+ STATE.busyLogout=true;
+ STATE.localLogoutInProgress=true;
+ render();
+ try{
+   if(!STATE.demo){
+     if(!STATE.supabase)throw new Error('Layanan autentikasi tidak tersedia.');
+     // Explicit local scope: logout on this browser; other devices stay signed in.
+     const {error}=await STATE.supabase.auth.signOut({scope:'local'});
+     if(error)throw error;
+   }
+   STATE.demo=false;
+   STATE.session=null;
+   STATE.logoutDialog=false;
+   STATE.busyLogout=false;
+   STATE.mode='login';
+   STATE.authNotice='';
+   STATE.authError='';
+   go('auth');
+   toast('Anda berhasil keluar dari IKHTIAR.');
+ }catch(error){
+   STATE.busyLogout=false;
+   STATE.logoutDialog=true;
+   render();
+   toast(error?.message||'Logout gagal. Silakan coba lagi.');
+ }finally{STATE.localLogoutInProgress=false;}
+}
 ROOT.addEventListener('click',async evt=>{
  const actionEl=evt.target.closest('[data-action]');if(!actionEl)return;
  const action=actionEl.dataset.action;
@@ -186,9 +314,32 @@ ROOT.addEventListener('click',async evt=>{
  if(action==='google-login')await googleLogin();
  if(action==='view-demo'){STATE.demo=true;go('dashboard');}
  if(action==='toggle-theme'){STATE.dark=!STATE.dark;localStorage.setItem('ikhtiar:theme',STATE.dark?'dark':'light');render();}
- if(action==='logout')await logout();
+ if(action==='logout')openLogoutDialog();
+ if(action==='cancel-logout')closeLogoutDialog();
+ if(action==='logout-backdrop' && evt.target===actionEl)closeLogoutDialog();
+ if(action==='confirm-logout')await confirmLogout();
  if(action==='placeholder')toast(`${actionEl.dataset.label||'Fitur ini'} akan tersedia pada milestone berikutnya. Foundation v0.1 fokus pada alur akun dan dashboard.`);
 });
 ROOT.addEventListener('submit',async evt=>{if(evt.target.id==='auth-form'){evt.preventDefault();const form=evt.target;await loginSubmit(form);}});
-function init(){render();authInit();setTimeout(()=>{STATE.splashDone=true;startRoute()},1200);if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('SW:',err.message)));}
+document.addEventListener('keydown',evt=>{
+ if(!STATE.logoutDialog)return;
+ if(evt.key==='Escape'){evt.preventDefault();closeLogoutDialog();return;}
+ if(evt.key!=='Tab')return;
+ const nodes=[...ROOT.querySelectorAll('.security-modal button:not(:disabled)')];
+ if(!nodes.length){evt.preventDefault();return;}
+ const first=nodes[0],last=nodes[nodes.length-1],active=document.activeElement;
+ if(!nodes.includes(active)){evt.preventDefault();first.focus();return;}
+ if(evt.shiftKey&&active===first){evt.preventDefault();last.focus();}
+ else if(!evt.shiftKey&&active===last){evt.preventDefault();first.focus();}
+});
+window.addEventListener('focus',checkSession);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkSession();});
+window.addEventListener('online',checkSession);
+function init(){
+ render();
+ authInit();
+ setTimeout(()=>{STATE.splashDone=true;startRoute()},1200);
+ setInterval(checkSession,5*60_000);
+ if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('SW:',err.message)));
+}
 init();
