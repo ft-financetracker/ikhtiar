@@ -398,10 +398,10 @@ body.security-modal-open{overflow:hidden}
 .top-profile[data-action="nav-mobile-menu"]:focus-visible { outline:2px solid #4b8bff;outline-offset:3px; }
 .top-profile .top-profile-copy { display:block; min-width:0; }
 @media(max-width:760px){.top-profile .top-profile-copy{display:none;}}
-/* IKHTIAR v0.9.0 — KlasKu-inspired curved mobile navigation.
-   ONE U-cut at active icon. No dots, second curves, or horizontal tab scrolling. */
+/* IKHTIAR v0.9.1 — KlasKu-style bottom dock: ONE centered U-notch,
+   fixed floating Beranda button, clean spacing, and usable safe-area. */
 @media (max-width:760px) {
-  .dashboard { padding-bottom:calc(104px + env(safe-area-inset-bottom,0px)); }
+  .dashboard { padding-bottom:calc(116px + env(safe-area-inset-bottom,0px)); }
   .dashboard-content { padding:20px 14px 28px; }
   .dashboard-topbar { height:64px; min-height:64px; padding:0 16px; gap:10px; }
   .top-mobile-logo .brand img { width:27px; height:34px; }
@@ -417,56 +417,61 @@ body.security-modal-open{overflow:hidden}
   .dashboard-grid, .main-stack, .aside-stack { min-width:0; }
   .panel { border-radius:17px; }
   .bottom-nav.ik-curved-bottom-nav {
-    --ik-nav-height:72px;
+    --ik-nav-height:82px;
     display:grid!important;
     grid-template-columns:repeat(5,minmax(0,1fr));
-    position:fixed; inset:auto 0 0;
-    width:100%; max-width:none;
+    position:fixed;left:0;right:0;bottom:0;top:auto;
+    width:100%;max-width:none;
     height:calc(var(--ik-nav-height) + env(safe-area-inset-bottom,0px));
     padding:0 0 env(safe-area-inset-bottom,0px);
-    border:0; border-radius:0; box-shadow:none;
-    background:transparent;
-    overflow:visible; scroll-snap-type:none;
-    isolation:isolate; z-index:90;
+    border:0;border-radius:0;box-shadow:none;background:transparent;
+    overflow:visible;isolation:isolate;z-index:90;
     color:var(--muted);
   }
-  .bottom-nav.ik-curved-bottom-nav::before {
-    content:"";
-    position:absolute; inset:0;
-    z-index:-1;
-    pointer-events:none;
-    background:linear-gradient(to bottom,var(--line) 0 1px,var(--surface) 1px);
-    -webkit-mask-image:radial-gradient(circle 31px at var(--ik-nav-x) 0px,transparent 30px,#000 31px);
-    mask-image:radial-gradient(circle 31px at var(--ik-nav-x) 0px,transparent 30px,#000 31px);
-    filter:drop-shadow(0 -5px 16px rgba(8,23,48,.12));
+  .ik-mobile-nav-surface {
+    position:absolute;left:0;top:0;width:100%;height:var(--ik-nav-height);
+    overflow:visible;pointer-events:none;z-index:-1;
+    filter:drop-shadow(0 -5px 14px rgba(8,23,48,.11));
+  }
+  .ik-mobile-nav-surface path {
+    fill:var(--surface);stroke:var(--line);stroke-width:1.05;
+    vector-effect:non-scaling-stroke;stroke-linejoin:round;
+  }
+  /* Keep the bottom safe area solid without vertically stretching the U-curve. */
+  .bottom-nav.ik-curved-bottom-nav::after {
+    content:"";position:absolute;left:0;right:0;bottom:0;
+    height:env(safe-area-inset-bottom,0px);background:var(--surface);
+    z-index:-1;pointer-events:none;
   }
   .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab {
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    position:relative; box-sizing:border-box; min-width:0;
-    width:100%; height:var(--ik-nav-height); flex:none;
-    padding:12px 2px 7px;
-    background:transparent; border:0; border-radius:0;
-    color:var(--muted); font:700 10px/1.25 'Plus Jakarta Sans',system-ui,sans-serif;
-    overflow:visible; white-space:nowrap;
-    cursor:pointer; touch-action:manipulation;
+    display:flex; flex-direction:column;align-items:center;justify-content:flex-end;
+    position:relative;box-sizing:border-box;min-width:0;width:100%;height:var(--ik-nav-height);
+    padding:0 2px 12px; margin:0;background:transparent;border:0;border-radius:0;
+    color:var(--muted);font:700 10px/1.25 'Plus Jakarta Sans',system-ui,sans-serif;
+    white-space:nowrap;overflow:visible;cursor:pointer;touch-action:manipulation;
     -webkit-tap-highlight-color:transparent;
   }
-  .ik-mobile-tab-icon { width:26px;height:26px;display:grid;place-items:center; flex:0 0 auto; }
-  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab .i { width:23px;height:23px; }
-  .ik-mobile-tab-label { margin-top:5px; max-width:100%; text-overflow:ellipsis;overflow:hidden; }
-  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab.active { color:var(--blue);font-weight:800; }
-  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab.active .ik-mobile-tab-icon {
-    position:absolute; left:50%; top:-18px;
-    transform:translateX(-50%);
-    width:56px;height:56px;
-    display:grid;place-items:center;
-    color:#fff; background:linear-gradient(135deg,#2563ff 0%,#1850d9 70%,#237de1 100%);
-    border:0; border-radius:50%;
-    box-shadow:0 8px 21px rgba(20,78,197,.28);
+  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab-icon {
+    display:grid;place-items:center;width:27px;height:27px;flex:0 0 auto;
   }
-  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab.active .ik-mobile-tab-icon .i { width:26px;height:26px; }
-  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab.active .ik-mobile-tab-label { margin-top:39px; }
-  .bottom-nav.ik-curved-bottom-nav button:focus-visible { outline:2px solid #4b8bff;outline-offset:0;border-radius:9px; }
+  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab .i { width:22px;height:22px; }
+  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab-label {
+    display:block;max-width:100%;margin-top:7px;
+    overflow:hidden;text-overflow:ellipsis;text-align:center;
+  }
+  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab.active { color:#00bfc7;font-weight:800; }
+  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab--home .ik-mobile-tab-icon {
+    position:absolute;left:50%;top:-10px;transform:translateX(-50%);
+    width:60px;height:60px;border-radius:50%;
+    background:linear-gradient(135deg,#02d6c6,#098bdf);
+    border:2px solid rgba(164,255,251,.8);
+    color:#fff;box-shadow:0 7px 20px rgba(0,139,196,.27);
+  }
+  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab--home .ik-mobile-tab-icon .i { width:28px;height:28px; }
+  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab--home .ik-mobile-tab-label { margin-top:0; }
+  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab--home.active .ik-mobile-tab-label { color:#00c7d2; }
+  .bottom-nav.ik-curved-bottom-nav button:focus-visible { outline:2px solid #54d7d9;outline-offset:1px;border-radius:8px; }
+  .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab--home:focus-visible { outline-offset:4px; }
   .ik-mobile-menu-layer:not([hidden]) { display:block;position:fixed;inset:0;z-index:80; }
   .ik-mobile-menu-layer[hidden] { display:none!important; }
   .ik-mobile-menu-scrim { position:absolute;inset:0;display:block;width:100%;height:100%;background:rgba(3,13,31,.67);border:0; }
@@ -502,13 +507,17 @@ body.security-modal-open{overflow:hidden}
   body.ik-mobile-menu-open .bottom-nav .ik-mobile-tab:not([data-action="nav-mobile-menu"]) { pointer-events:none; }
 }
 @media (max-width:350px) {
- .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab { font-size:9px; }
- .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab.active .ik-mobile-tab-icon { width:54px;height:54px; }
+ .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab { font-size:9px;padding-inline:0; }
+ .bottom-nav.ik-curved-bottom-nav .ik-mobile-tab--home .ik-mobile-tab-icon { width:58px;height:58px; }
  .ik-mobile-menu-panel { padding-inline:13px; }
  .dashboard-topbar { padding-inline:12px; }
 }
-@media(min-width:761px) {
- .ik-mobile-menu-layer { display:none!important; }
+@media(min-width:761px) { .ik-mobile-menu-layer { display:none!important; } }
+/* Scrollbars hidden, NOT scrolling: preserve wheel, touch, trackpad, keyboard.
+   This includes root/page scrollbars, desktop sidebar, dialogs and nested lists. */
+html,body,#app,#app * { scrollbar-width:none!important; -ms-overflow-style:none!important; }
+html::-webkit-scrollbar,body::-webkit-scrollbar,#app::-webkit-scrollbar,#app *::-webkit-scrollbar {
+ display:none!important;width:0!important;height:0!important;
 }
 @media(prefers-reduced-motion:reduce) {
  .bottom-nav.ik-curved-bottom-nav *, .ik-mobile-menu-layer * { transition:none!important;animation:none!important; }
