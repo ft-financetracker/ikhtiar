@@ -1,8 +1,8 @@
 import { CONFIG } from '../config.js';
-import { createCareerModule } from './career.js?v=0.8.0';
-import { createPortfolioModule } from './portfolio.js?v=0.8.0';
-import { createJobsModule } from './jobs.js?v=0.8.0';
-import { createSupportModule } from './support.js?v=0.8.0';
+import { createCareerModule } from './career.js?v=0.9.0';
+import { createPortfolioModule } from './portfolio.js?v=0.9.0';
+import { createJobsModule } from './jobs.js?v=0.9.0';
+import { createSupportModule } from './support.js?v=0.9.0';
 
 const ROOT = document.getElementById('app');
 const TOAST = document.getElementById('toast');
@@ -254,12 +254,56 @@ function auth(){const isLogin=STATE.mode==='login';const isRegister=STATE.mode==
  ${(isLogin||isRegister)?`<div class="auth-sep">atau lanjutkan dengan</div><button class="btn btn-outline btn-wide" data-action="google-login" ${!STATE.supabase||STATE.busy?'disabled':''}><span class="google-icon">G</span> Lanjutkan dengan Google</button>`:`<button class="btn btn-quiet btn-wide" style="margin-top:14px" data-action="auth-login">Kembali ke Login</button>`}
  ${!STATE.supabase?`<div class="auth-note">${icon('info')} Mode pratinjau. Login asli belum aktif hingga Supabase dikonfigurasi. Gunakan dashboard demo untuk meninjau tampilan.</div>`:''}
  <button class="btn btn-quiet btn-wide" data-action="view-demo" style="margin-top:15px">${icon('eye')} Lihat Dashboard Demo ${icon('arrow-right')}</button>
- </div><footer class="auth-foot">IKHTIAR v0.8.0 · <button type="button" class="ik-footer-link" data-action="nav-trust">Pusat Kepercayaan</button> · <button type="button" class="ik-footer-link" data-action="nav-privacy">Privasi</button> · <button type="button" class="ik-footer-link" data-action="nav-terms">Ketentuan</button><br>Mode demo tidak menyimpan data pengguna ke Supabase.</footer></section></main>`;
+ </div><footer class="auth-foot">IKHTIAR v0.9.0 · <button type="button" class="ik-footer-link" data-action="nav-trust">Pusat Kepercayaan</button> · <button type="button" class="ik-footer-link" data-action="nav-privacy">Privasi</button> · <button type="button" class="ik-footer-link" data-action="nav-terms">Ketentuan</button><br>Mode demo tidak menyimpan data pengguna ke Supabase.</footer></section></main>`;
 }
 function userInfo(){const u=STATE.session?.user;let email=u?.email||'';let meta=u?.user_metadata||{};let name=STATE.demo?'Pengguna Demo':(STATE.careerProfile?.full_name||meta.full_name||meta.name||meta.display_name||email.split('@')[0]||'Pengguna IKHTIAR');return {name,email:STATE.demo?'Akun simulasi · tanpa data asli':email, initials:String(name).trim().slice(0,1).toUpperCase()||'I'};}
 function navAction(type,title,ic,isActive=false){
  const action=type==='dashboard'?'nav-dashboard':type==='settings'?'nav-settings':type==='admin-settings'?'nav-admin-settings':type==='career'?'nav-career':type==='portfolio'?'nav-portfolio':type==='cv'?'nav-cv':type==='job'?'nav-jobs':type==='applications'?'nav-applications':type==='support'?'nav-support':'placeholder';
  return `<button class="nav-item ${isActive?'active':''}" data-action="${action}" ${action==='placeholder'?`data-label="${escapeHTML(title)}"`:''} ${isActive?'aria-current="page"':''}>${icon(ic)} ${title}</button>`;
+}
+// IKHTIAR v0.9.0 — compact curved bottom navigation inspired by KlasKu.
+// Only one floating active item / U-notch; every secondary destination remains in More.
+const MOBILE_PRIMARY_NAV=[
+ ['user','Profil','nav-career','career'],
+ ['file','CV','nav-cv','cv'],
+ ['home','Beranda','nav-dashboard','dashboard'],
+ ['briefcase','Loker','nav-jobs','jobs'],
+ ['menu','Menu','nav-mobile-menu','more']
+];
+function mobileBottomNav(displayName){
+ const primaryIndex=MOBILE_PRIMARY_NAV.findIndex(row=>row[3]===STATE.view);
+ const activeIndex=primaryIndex<0?4:primaryIndex;
+ const nav=MOBILE_PRIMARY_NAV.map(([ic,label,action,view],index)=>{
+  const active=index===activeIndex;
+  return `<button type="button" class="ik-mobile-tab${active?' active':''}" data-action="${action}" aria-label="${label}${view==='more'?' dan navigasi lainnya':''}" ${active&&view!=='more'?'aria-current="page"':''} ${view==='more'?'aria-controls="ik-mobile-menu" aria-expanded="false"':''}><span class="ik-mobile-tab-icon">${icon(ic)}</span><span class="ik-mobile-tab-label">${label}</span></button>`;
+ }).join('');
+ const secondary=[
+  ['folder','Portofolio','Karya dan tautan publik','nav-portfolio',STATE.view==='portfolio'],
+  ['bookmark','Lamaran Saya','Status dan tindak lanjut','nav-applications',STATE.view==='applications'],
+  ['settings','Pengaturan','Tampilan dan keamanan akun','nav-settings',STATE.view==='settings'],
+  ['shield','Bantuan & Laporan','Riwayat tiket dan bantuan','nav-support',STATE.view==='support'],
+  ...(isAdmin()?[['shield','Panel Super Admin','Kelola IKHTIAR','nav-admin-settings',STATE.view==='admin-settings']]:[])
+ ];
+ return `<nav class="bottom-nav ik-curved-bottom-nav" aria-label="Navigasi utama seluler" style="--ik-nav-x:${activeIndex*20+10}%">${nav}</nav>
+ <div class="ik-mobile-menu-layer" id="ik-mobile-menu" hidden>
+  <button type="button" class="ik-mobile-menu-scrim" data-action="nav-mobile-close" tabindex="-1" aria-label="Tutup menu"></button>
+  <section class="ik-mobile-menu-panel" role="dialog" aria-modal="true" aria-labelledby="ik-mobile-menu-title" tabindex="-1">
+   <div class="ik-mobile-menu-handle" aria-hidden="true"></div>
+   <div class="ik-mobile-menu-heading"><div><span class="ik-mobile-menu-overline">IKHTIAR / WORKSPACE</span><h2 id="ik-mobile-menu-title">Menu lainnya</h2><p>${displayName} · Satu profil, banyak peluang.</p></div><button type="button" class="ik-mobile-menu-close" data-action="nav-mobile-close" aria-label="Tutup menu">&times;</button></div>
+   <div class="ik-mobile-menu-list">${secondary.map(([ic,label,description,action,active])=>`<button type="button" class="ik-mobile-menu-link${active?' active':''}" data-action="${action}" ${active?'aria-current="page"':''}><span class="ik-mobile-menu-link-icon">${icon(ic)}</span><span class="ik-mobile-menu-copy"><strong>${label}</strong><small>${description}</small></span>${icon('arrow-right')}</button>`).join('')}</div>
+   <button type="button" class="ik-mobile-menu-logout" data-action="logout">${icon('log-out')} Keluar dari akun</button>
+  </section>
+ </div>`;
+}
+function setMobileMenu(open){
+ const layer=ROOT.querySelector('#ik-mobile-menu');
+ if(!layer)return;
+ layer.hidden=!open;
+ const trigger=ROOT.querySelector('[data-action="nav-mobile-menu"]');
+ trigger?.setAttribute('aria-expanded',String(open));
+ document.body.classList.toggle('ik-mobile-menu-open',open);
+ if(open)layer.querySelector('.ik-mobile-menu-close')?.focus();
+ else trigger?.focus();
 }
 function dashboard(){const u=userInfo();const sample=STATE.demo;const count=sample?[3,1,12]:[portfolio.count(),career.cvCount(),jobs.stats().saved];const progress=sample?75:career.status().progress;const displayName=escapeHTML(u.name);const showingSettings=['settings','admin-settings','career','cv','portfolio','jobs','applications','support'].includes(STATE.view);
  return `<main class="dashboard ${STATE.dark?'dark':''}" style="--ik-font-mul:${STATE.fontScale}">
@@ -271,7 +315,7 @@ function dashboard(){const u=userInfo();const sample=STATE.demo;const count=samp
  <div class="sidebar-user"><div class="avatar">${escapeHTML(u.initials)}</div><div style="min-width:0"><strong>${displayName}</strong><small>${sample?'Demo Workspace':'Pengguna IKHTIAR'}</small></div></div>
  </aside>
  <div class="dashboard-main"><header class="dashboard-topbar"><button type="button" class="top-search ik-jobs-top-search" data-action="nav-jobs">${icon('search')} Cari lowongan, perusahaan, atau kata kunci...</button><div class="top-mobile-logo">${brand()}</div>
- <div class="top-actions"><button class="icon-btn" data-action="toggle-theme" title="Ganti tema" aria-label="Ganti tema">${icon(STATE.dark?'sun':'moon')}</button><button class="icon-btn" data-action="placeholder" data-label="Notifikasi" aria-label="Notifikasi">${icon('bell')}</button><div class="top-profile"><div class="top-avatar">${escapeHTML(u.initials)}</div><div><strong>${displayName}</strong><small>${sample?'Mode Demo':'Akun Aktif'}</small></div></div><button class="icon-btn" data-action="logout" title="Keluar" aria-label="Keluar">${icon('log-out')}</button></div></header>
+ <div class="top-actions"><button class="icon-btn" data-action="toggle-theme" title="Ganti tema" aria-label="Ganti tema">${icon(STATE.dark?'sun':'moon')}</button><button class="icon-btn" data-action="placeholder" data-label="Notifikasi" aria-label="Notifikasi">${icon('bell')}</button><button type="button" class="top-profile" data-action="nav-mobile-menu" aria-label="Buka pengaturan akun dan menu lainnya"><span class="top-avatar">${escapeHTML(u.initials)}</span><span class="top-profile-copy"><strong>${displayName}</strong><small>${sample?'Mode Demo':'Akun Aktif'}</small></span></button><button class="icon-btn" data-action="logout" title="Keluar" aria-label="Keluar">${icon('log-out')}</button></div></header>
  <div class="dashboard-content">${showingSettings ? (STATE.view==='portfolio'?portfolio.page():['career','cv'].includes(STATE.view)?career.page():['jobs','applications'].includes(STATE.view)?jobs.page():STATE.view==='support'?support.userPage():settingsPage()) : `<div class="welcome"><div><h1>Halo, ${displayName}! <span aria-hidden="true">👋</span></h1><p>Langkah kecil hari ini bisa membuka peluang besar esok nanti.</p></div><div class="date-pill">${icon('calendar')} ${new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric'}).format(new Date())}</div></div>
  ${STATE.platformNotice&&!sample?`<div class="ik-platform-banner">${icon('info')} <span>${escapeHTML(STATE.platformNotice)}</span></div>`:''}
  ${sample?`<div class="demo-alert">${icon('info')} <span><b>Dashboard demo.</b> Semua angka, aktivitas, dan lowongan di bawah hanya contoh. Tidak ada akun yang sedang login.</span></div>`:''}
@@ -288,7 +332,7 @@ function dashboard(){const u=userInfo();const sample=STATE.demo;const count=samp
  ${sample?`<div class="activity"><span class="activity-icon">${icon('folder')}</span><div><strong>Portofolio kamu dipublikasikan</strong><small>2 jam yang lalu</small></div></div><div class="activity"><span class="activity-icon">${icon('file')}</span><div><strong>CV baru berhasil dibuat</strong><small>1 hari yang lalu</small></div></div><div class="activity"><span class="activity-icon">${icon('briefcase')}</span><div><strong>Menyimpan lowongan menarik</strong><small>3 hari yang lalu</small></div></div>`:career.latestCV()?`<div class="activity"><span class="activity-icon">${icon('file')}</span><div><strong>CV untuk ${escapeHTML(career.latestCV().company_name)} dibuat</strong><small>${escapeHTML(career.latestCV().position_name)} · tersimpan di akun</small></div></div><button class="text-btn" data-action="nav-cv">Lihat CV ${icon('arrow-right')}</button>`:`<div class="notice-empty">Buat CV pertamamu dari Profil Karier untuk memulai aktivitas.</div>`}</section>
  <section class="journey">${icon('sparkles')}<h3>Your Career, Your Move.</h3><p>Satu profil, banyak peluang. Terus kembangkan dirimu dan siapkan langkah berikutnya.</p><button class="btn btn-white" data-action="nav-career">Mulai sekarang ${icon('arrow-right')}</button></section></div></div>`}
  </div></div>
- <nav class="bottom-nav" aria-label="Navigasi bawah">${[['home','Beranda','nav-dashboard','dashboard'],['user','Profil','nav-career','career'],['folder','Karya','nav-portfolio','portfolio'],['file','CV','nav-cv','cv'],['briefcase','Loker','nav-jobs','jobs'],['bookmark','Lamaran','nav-applications','applications'],['settings','Atur','nav-settings','settings']].map(([ic,label,act,view])=>`<button class="${STATE.view===view?'active':''}" data-action="${act}" ${STATE.view===view?'aria-current="page"':''}>${icon(ic)}${label}</button>`).join('')}</nav></main>`;
+ ${mobileBottomNav(displayName)}</main>`;
 }
 // IKHTIAR Settings v0.1.3 — interactive accordion with working personal preferences.
 const SETTINGS_CARDS=[
@@ -332,7 +376,7 @@ function settingsPage(){
   </div><aside class="ik-settings-aside">
    <div class="ik-settings-summary"><div class="ik-settings-userline"><div class="ik-settings-avatar">${escapeHTML(u.initials)}</div><div><strong>${escapeHTML(u.name)}</strong><small>${escapeHTML(u.email)}</small></div></div>
     <div class="ik-settings-summary-divider"></div><div class="ik-settings-summary-item"><span>Hak akses</span><strong>${isAdmin()?'Super Admin':'User'}</strong></div>
-    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.8.0</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
+    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.9.0</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
    ${!adminView&&isAdmin()?`<button class="ik-settings-admin-link" data-action="nav-admin-settings">${icon('shield')} Buka Panel Super Admin ${icon('arrow-right')}</button>`:''}
    ${adminView?`<button class="ik-settings-admin-link" data-action="nav-settings">${icon('arrow-left')} Kembali ke Pengaturan Pribadi</button>`:''}
    <div class="ik-settings-hint"><strong>${icon('lock')} Privasi tetap utama</strong><p>Pengaturan pribadimu tidak memberikan akses ke data pengguna lain. Perubahan hak Super Admin hanya berlaku setelah diverifikasi oleh Supabase.</p></div>
@@ -355,7 +399,7 @@ function settingsCardContent(id){const u=userInfo();
   <div class="ik-setting-detail"><span class="ik-detail-label">Salinan data pribadi</span><p>Unduh salinan data yang tersimpan dalam modul Profil Karier, CV, Portofolio, Lowongan Tersimpan, dan Lamaran. Unduhan berupa JSON di perangkat Anda, bukan tautan publik.</p><button type="button" class="btn btn-outline" data-action="settings-export-data" ${STATE.demo||!STATE.session||STATE.dataExportBusy?'disabled':''}>${STATE.dataExportBusy?'Menyiapkan ekspor...':`${icon('file')} Unduh Data Saya (.json)`}</button><small class="ik-export-warning">File ekspor dapat berisi nomor telepon, pengalaman kerja, catatan lamaran, dan data sensitif. Simpan secara pribadi. Sesi login dan password tidak disertakan.</small></div>
   <div class="ik-info-line">${icon('lock')} Penghapusan akun mandiri belum tersedia. Ekspor hanya mencakup data modul IKHTIAR yang terdaftar, bukan log internal penyedia layanan.</div><button class="btn btn-outline" type="button" data-action="nav-trust">${icon('shield')} Buka Pusat Kepercayaan</button></div>`;
  if(id==='help')return `<div class="ik-setting-readonly"><p>Satu tempat untuk melaporkan masalah aplikasi, bantuan data, atau lowongan mencurigakan. Riwayat laporan tersimpan di akun yang sama.</p><button type="button" class="btn btn-primary" data-action="nav-support">${icon('shield')} Buka Pusat Bantuan</button><p class="ik-setting-fineprint">Saat ini perlu login. Kanal bantuan untuk pemulihan akun terkunci masih dalam persiapan.</p></div>`;
- if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.8.0 — Support & Beta Readiness</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div><div class="ik-setting-detail"><span class="ik-detail-label">Informasi resmi dan privasi</span><p>Cara kerja IKHTIAR, informasi yang dipublikasikan, dan batasan fitur keamanan.</p><button class="btn btn-outline" type="button" data-action="nav-trust">${icon('shield')} Pusat Kepercayaan</button></div></div>`;
+ if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.9.0 — Mobile UX & Beta Polish</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div><div class="ik-setting-detail"><span class="ik-detail-label">Informasi resmi dan privasi</span><p>Cara kerja IKHTIAR, informasi yang dipublikasikan, dan batasan fitur keamanan.</p><button class="btn btn-outline" type="button" data-action="nav-trust">${icon('shield')} Pusat Kepercayaan</button></div></div>`;
  return '';
 }
 function adminCardContent(id){
@@ -555,7 +599,7 @@ function trustPage(){
   <section class="ik-trust-section"><h2>Kontrol data & batasan yang terbuka</h2><ul><li>Data profil dan lamaran dapat diperbarui dari menu pemilik masing-masing.</li><li>Di Pengaturan → Privasi & Data, pengguna login dapat mengunduh salinan data modul dalam JSON.</li><li>Penghapusan akun mandiri, permintaan data dari penyedia eksternal, dan kebijakan retensi formal belum disediakan pada tahap ini.</li><li>Kanal bantuan untuk pengguna yang tidak bisa login, peninjauan kebijakan formal, dan uji keamanan produksi harus diselesaikan sebelum peluncuran publik.</li></ul></section>
   <section class="ik-trust-caution"><div>${icon('info')}</div><div><h2>Tips menghindari penipuan rekrutmen</h2><p>Verifikasi alamat perusahaan dan sumber lowongan. Jangan membagikan OTP, kata sandi, atau kode pemulihan kepada pihak yang mengaku sebagai admin atau perekrut. Untuk kasus mencurigakan, hentikan proses dan periksa melalui kanal resmi perusahaan.</p></div></section>
   <section class="ik-trust-section ik-trust-links"><h2>Dokumen & bantuan</h2><p>Dokumen privasi dan ketentuan berikut masih berbentuk draf. Konten harus ditinjau pengelola sebelum beta publik.</p><div class="ik-trust-link-actions"><button type="button" class="btn btn-outline" data-action="nav-privacy">Kebijakan Privasi (Draf)</button><button type="button" class="btn btn-outline" data-action="nav-terms">Ketentuan Layanan (Draf)</button><button type="button" class="btn btn-primary" data-action="nav-support">Pusat Bantuan</button></div></section>
-  <footer class="ik-trust-footer"><span>IKHTIAR · Your Career, Your Move. · v0.8.0</span><button type="button" data-action="trust-back">${backLabel} ${icon('arrow-right')}</button></footer></div>
+  <footer class="ik-trust-footer"><span>IKHTIAR · Your Career, Your Move. · v0.9.0</span><button type="button" data-action="trust-back">${backLabel} ${icon('arrow-right')}</button></footer></div>
  </main>`;
 }
 function legalPage(kind){
@@ -743,6 +787,7 @@ function exportAdminOverview(){
  ikDownloadText('IKHTIAR-ringkasan-operasional-'+new Date().toISOString().slice(0,10)+'.csv',csv,'text/csv;charset=utf-8');
 }
 function render(){
+ document.body.classList.remove('ik-mobile-menu-open');
  if(STATE.view==='career'&&career.hasUnsaved())career.syncForm();
  if(STATE.view==='portfolio'&&portfolio.hasUnsaved())portfolio.syncForm();
  document.body.classList.toggle('dark',['dashboard','settings','admin-settings','career','cv','portfolio','jobs','applications','support'].includes(STATE.view)&&STATE.dark);
@@ -849,6 +894,14 @@ async function confirmLogout(){
 ROOT.addEventListener('click',async evt=>{
  const actionEl=evt.target.closest('[data-action]');if(!actionEl)return;
  const action=actionEl.dataset.action;
+ if(action==='nav-mobile-menu'){
+  if(window.matchMedia('(max-width:760px)').matches)setMobileMenu(ROOT.querySelector('#ik-mobile-menu')?.hidden??true);
+  else go('settings');
+  return;
+ }
+ if(action==='nav-mobile-close'){setMobileMenu(false);return;}
+ const existingMenuLayer=ROOT.querySelector('#ik-mobile-menu');
+ if(existingMenuLayer&&!existingMenuLayer.hidden)setMobileMenu(false);
  if(action==='brand-home'){evt.preventDefault();go(STATE.demo||STATE.session?'dashboard':'auth');}
  if(action==='nav-trust')go('trust');
  if(action==='nav-privacy')go('privacy');
@@ -1014,4 +1067,21 @@ function init(){
   });
 }
 }
+window.addEventListener('resize',()=>{
+ if(window.innerWidth>760&&document.body.classList.contains('ik-mobile-menu-open'))setMobileMenu(false);
+});
+// Dialog Escape key and keyboard focus loop (prevent background navigation while More is open).
+document.addEventListener('keydown',event=>{
+ const layer=ROOT.querySelector('#ik-mobile-menu');
+ if(!layer||layer.hidden)return;
+ if(event.key==='Escape'){event.preventDefault();setMobileMenu(false);return;}
+ if(event.key==='Tab'){
+  const focusable=[...layer.querySelectorAll('button:not([disabled]):not([tabindex="-1"])')];
+  if(!focusable.length)return;
+  const first=focusable[0],last=focusable[focusable.length-1];
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+ }
+});
+
 init();
