@@ -1,7 +1,7 @@
-/* IKHTIAR PWA v0.9.3 — network-first for app shell, safe offline fallback. */
-const CACHE='ikhtiar-app-v0.9.3';
+/* IKHTIAR PWA v0.9.4 — network-first for app shell, safe offline fallback. */
+const CACHE='ikhtiar-app-v0.9.4';
 const BASE=new URL('./',self.registration.scope);
-const CORE=['./','./index.html','./src/styles.css?v=0.9.3','./src/app.js?v=0.9.3','./src/career.js?v=0.9.3','./src/portfolio.js?v=0.9.3','./src/jobs.js?v=0.9.3','./src/support.js?v=0.9.3','./manifest.webmanifest','./assets/brand/logo-mark.png','./assets/brand/icon-192.png','./assets/brand/icon-512.png'].map(p=>new URL(p,BASE).toString());
+const CORE=['./','./index.html','./src/styles.css?v=0.9.4','./src/app.js?v=0.9.4','./src/career.js?v=0.9.4','./src/portfolio.js?v=0.9.4','./src/jobs.js?v=0.9.4','./src/community-jobs.js?v=0.9.4','./src/support.js?v=0.9.4','./manifest.webmanifest','./assets/brand/logo-mark.png','./assets/brand/icon-192.png','./assets/brand/icon-512.png'].map(p=>new URL(p,BASE).toString());
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)));});
 self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting();});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('ikhtiar-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
@@ -9,7 +9,7 @@ self.addEventListener('fetch',event=>{
  const req=event.request;if(req.method!=='GET')return;
  const u=new URL(req.url);if(u.origin!==self.location.origin)return;
  if(u.pathname.endsWith('/config.js'))return;
- const isShell=req.mode==='navigate'||u.pathname.endsWith('/src/app.js')||u.pathname.endsWith('/src/styles.css')||u.pathname.endsWith('/src/career.js')||u.pathname.endsWith('/src/portfolio.js')||u.pathname.endsWith('/src/jobs.js')||u.pathname.endsWith('/src/support.js')||u.pathname.endsWith('/index.html');
+ const isShell=req.mode==='navigate'||u.pathname.endsWith('/src/app.js')||u.pathname.endsWith('/src/styles.css')||u.pathname.endsWith('/src/career.js')||u.pathname.endsWith('/src/portfolio.js')||u.pathname.endsWith('/src/jobs.js')||u.pathname.endsWith('/src/community-jobs.js')||u.pathname.endsWith('/src/support.js')||u.pathname.endsWith('/index.html');
  if(isShell){event.respondWith((async()=>{
   try{const response=await fetch(req,{cache:'no-store'});if(response.ok){const c=await caches.open(CACHE);await c.put(req,response.clone());}return response;}
   catch{const c=await caches.open(CACHE);return (await c.match(req))||(req.mode==='navigate'?await c.match(new URL('./index.html',BASE).toString()):undefined)||Response.error();}
