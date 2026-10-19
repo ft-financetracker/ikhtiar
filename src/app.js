@@ -1,8 +1,8 @@
 import { CONFIG } from '../config.js';
-import { createCareerModule } from './career.js?v=0.9.2';
-import { createPortfolioModule } from './portfolio.js?v=0.9.2';
-import { createJobsModule } from './jobs.js?v=0.9.2';
-import { createSupportModule } from './support.js?v=0.9.2';
+import { createCareerModule } from './career.js?v=0.9.3';
+import { createPortfolioModule } from './portfolio.js?v=0.9.3';
+import { createJobsModule } from './jobs.js?v=0.9.3';
+import { createSupportModule } from './support.js?v=0.9.3';
 
 const ROOT = document.getElementById('app');
 const TOAST = document.getElementById('toast');
@@ -16,7 +16,7 @@ const preferredTheme=THEME_MODES.includes(savedTheme)?savedTheme:'system';
 const systemDark=()=>window.matchMedia?.('(prefers-color-scheme: dark)').matches??false;
 const FONT_SCALES=[1,1.1,1.2];
 const storedScale=Number(localStorage.getItem('ikhtiar:font-scale'));
-const STATE = {view:'splash', slide:0, mode:'login', session:null, supabase:null, authReady:false, splashDone:false, authError:'', authNotice:'', passwordVisible:false, busy:false, resendEmail:'', resendAt:0, logoutDialog:false, logoutScope:'local', busyLogout:false, localLogoutInProgress:false, sessionCheckAt:0, sessionChecking:false, demo:false, themeMode:preferredTheme, dark:preferredTheme==='dark'||(preferredTheme==='system'&&systemDark()), fontScale:FONT_SCALES.includes(storedScale)?storedScale:1, settingSection:'profile', adminSection:'platform', role:'user', roleReady:false, roleRequest:0, platformNotice:'', platformReady:false, platformBusy:false, profileBusy:false, passwordBusy:false, adminUsers:[], adminUsersTotal:0, adminUsersSearch:'', adminUsersPage:0, adminUsersBusy:false, adminUsersLoaded:false, adminUsersError:'', adminAudit:[], adminAuditBusy:false, adminAuditLoaded:false, adminAuditError:'', adminRoleDialog:null, adminRoleBusy:false, adminOverview:null, adminOverviewLoaded:false, adminOverviewBusy:false, adminOverviewError:'', dataExportBusy:false, careerProfile:null, betaItems:[], betaLoaded:false, betaLoading:false, betaError:'', betaSavingId:null, betaDrafts:{}};
+const STATE = {view:'splash', slide:0, mode:'login', session:null, supabase:null, authReady:false, splashDone:false, authError:'', authNotice:'', passwordVisible:false, busy:false, resendEmail:'', resendAt:0, logoutDialog:false, logoutScope:'local', busyLogout:false, localLogoutInProgress:false, sessionCheckAt:0, sessionChecking:false, demo:false, themeMode:preferredTheme, dark:preferredTheme==='dark'||(preferredTheme==='system'&&systemDark()), fontScale:FONT_SCALES.includes(storedScale)?storedScale:1, settingSection:'', adminSection:'', role:'user', roleReady:false, roleRequest:0, platformNotice:'', platformReady:false, platformBusy:false, profileBusy:false, passwordBusy:false, adminUsers:[], adminUsersTotal:0, adminUsersSearch:'', adminUsersPage:0, adminUsersBusy:false, adminUsersLoaded:false, adminUsersError:'', adminAudit:[], adminAuditBusy:false, adminAuditLoaded:false, adminAuditError:'', adminRoleDialog:null, adminRoleBusy:false, adminOverview:null, adminOverviewLoaded:false, adminOverviewBusy:false, adminOverviewError:'', dataExportBusy:false, careerProfile:null, betaItems:[], betaLoaded:false, betaLoading:false, betaError:'', betaSavingId:null, betaDrafts:{}};
 const slides = [
   {tag:'01 · SHOW YOUR WORK',title:'Tunjukkan karya. <span class="grad-text">Buka peluang.</span>',desc:'Bangun portofolio profesional yang terasa seperti dirimu. Tampilkan proyek, skill, dan pencapaian melalui satu tautan yang mudah dibagikan.',top:'Portofolio Online',bottom:'Karyamu, identitasmu',caption:'Perjalanan besar dimulai dari karya kecil yang kamu banggakan.'},
   {tag:'02 · BUILT FOR YOUR CAREER',title:'CV profesional, <span class="grad-text">lebih mudah.</span>',desc:'Susun CV ATS-friendly dari profil yang sama. Pilih template minimalis, lihat pratinjau langsung, dan siapkan dokumen untuk peluang berikutnya.',top:'CV ATS Ready',bottom:'Format yang lebih rapi',caption:'Bukan sekadar terlihat bagus — informasi penting juga harus mudah ditemukan.'},
@@ -29,6 +29,10 @@ const portfolio=createPortfolioModule({state:STATE,render,toast,go,icon,escapeHT
 const jobs=createJobsModule({state:STATE,render,toast,go,icon,escapeHTML,isAdmin,prepareCV:(company,position)=>career.prepareCV(company,position)});
 const support=createSupportModule({state:STATE,render,toast,escapeHTML,icon,isAdmin});
 function go(view){
+ if(STATE.view==='admin-settings'&&view!=='admin-settings'&&STATE.adminSection==='platform'){
+  const noticeInput=document.querySelector('#admin-announcement-form [name="announcement"]');
+  if(noticeInput&&noticeInput.value!==STATE.platformNotice&&!window.confirm('Pengumuman belum disimpan. Tinggalkan halaman dan batalkan perubahan?'))return;
+ }
  if(STATE.view==='admin-settings'&&view!=='admin-settings'&&hasBetaDraft()){
   if(!window.confirm('Ada catatan audit beta yang belum disimpan. Tinggalkan halaman?'))return;
   STATE.betaDrafts={};
@@ -46,6 +50,9 @@ function go(view){
   if(!window.confirm('Profil belum disimpan. Tinggalkan halaman dan batalkan perubahan?'))return;
  }
  if(view==='admin-settings'&&!isAdmin())view='settings';
+ // Every fresh visit starts with closed accordions; never expose a random form by default.
+ if(view==='settings'&&STATE.view!==view)STATE.settingSection='';
+ if(view==='admin-settings'&&STATE.view!==view)STATE.adminSection='';
  if(['dashboard','settings','admin-settings','career','cv','portfolio','portfolio-preview','jobs','applications','support'].includes(view)&&!STATE.session&&!STATE.demo)view='auth';
  STATE.view=view;
  location.hash=`/${view}`;
@@ -254,7 +261,7 @@ function auth(){const isLogin=STATE.mode==='login';const isRegister=STATE.mode==
  ${(isLogin||isRegister)?`<div class="auth-sep">atau lanjutkan dengan</div><button class="btn btn-outline btn-wide" data-action="google-login" ${!STATE.supabase||STATE.busy?'disabled':''}><span class="google-icon">G</span> Lanjutkan dengan Google</button>`:`<button class="btn btn-quiet btn-wide" style="margin-top:14px" data-action="auth-login">Kembali ke Login</button>`}
  ${!STATE.supabase?`<div class="auth-note">${icon('info')} Mode pratinjau. Login asli belum aktif hingga Supabase dikonfigurasi. Gunakan dashboard demo untuk meninjau tampilan.</div>`:''}
  <button class="btn btn-quiet btn-wide" data-action="view-demo" style="margin-top:15px">${icon('eye')} Lihat Dashboard Demo ${icon('arrow-right')}</button>
- </div><footer class="auth-foot">IKHTIAR v0.9.1 · <button type="button" class="ik-footer-link" data-action="nav-trust">Pusat Kepercayaan</button> · <button type="button" class="ik-footer-link" data-action="nav-privacy">Privasi</button> · <button type="button" class="ik-footer-link" data-action="nav-terms">Ketentuan</button><br>Mode demo tidak menyimpan data pengguna ke Supabase.</footer></section></main>`;
+ </div><footer class="auth-foot">IKHTIAR v0.9.3 · <button type="button" class="ik-footer-link" data-action="nav-trust">Pusat Kepercayaan</button> · <button type="button" class="ik-footer-link" data-action="nav-privacy">Privasi</button> · <button type="button" class="ik-footer-link" data-action="nav-terms">Ketentuan</button><br>Mode demo tidak menyimpan data pengguna ke Supabase.</footer></section></main>`;
 }
 function userInfo(){const u=STATE.session?.user;let email=u?.email||'';let meta=u?.user_metadata||{};let name=STATE.demo?'Pengguna Demo':(STATE.careerProfile?.full_name||meta.full_name||meta.name||meta.display_name||email.split('@')[0]||'Pengguna IKHTIAR');return {name,email:STATE.demo?'Akun simulasi · tanpa data asli':email, initials:String(name).trim().slice(0,1).toUpperCase()||'I'};}
 function navAction(type,title,ic,isActive=false){
@@ -405,9 +412,10 @@ const ADMIN_CARDS=[
 function settingCard(card,expanded,admin=false){
  const active=expanded===card.id;
  return `<section class="ik-setting-card ${active?'is-open':''}">
-  <button type="button" class="ik-setting-toggle" data-action="${admin?'admin-section':'settings-section'}" data-section="${card.id}" aria-expanded="${active}" aria-controls="setting-panel-${admin?'admin-':''}${card.id}">
+  <button type="button" class="ik-setting-toggle" data-action="${admin?'admin-section':'settings-section'}" data-section="${card.id}" aria-expanded="${active}" ${active?`aria-controls="setting-panel-${admin?'admin-':''}${card.id}"`:''}>
    <span class="ik-setting-icon">${icon(card.icon)}</span>
    <span class="ik-setting-heading"><strong>${card.title}</strong><small>${card.sub}</small></span>
+   <span class="ik-setting-toggle-status" aria-hidden="true">${active?'Tutup':'Buka'}</span>
    <span class="ik-setting-chevron">${icon('chevron-down')}</span>
   </button>
   ${active?`<div class="ik-setting-panel" id="setting-panel-${admin?'admin-':''}${card.id}">${admin?adminCardContent(card.id):settingsCardContent(card.id)}</div>`:''}
@@ -421,17 +429,36 @@ function settingsPage(){
    <h1 id="ik-settings-heading">${adminView?'Panel Super Admin':'Pengaturan'}</h1>
    <p>${adminView?'Konfigurasi platform dan pengelolaan hak akses yang dipisahkan dari akun pribadi.':'Sesuaikan akun, keamanan, dan pengalaman menggunakan IKHTIAR.'}</p>${!adminView&&isAdmin()?`<button type="button" class="ik-settings-mobile-admin" data-action="nav-admin-settings">${icon('shield')} Panel Super Admin ${icon('arrow-right')}</button>`:''}</div>
   ${STATE.demo?`<div class="ik-settings-callout">${icon('info')} Mode demo: perubahan profil dan keamanan membutuhkan akun login asli.</div>`:''}
+  <div class="ik-settings-toolbar"><span class="ik-settings-toolbar-hint">${icon('chevron-down')} Pilih kartu untuk melihat detail. Semua kategori tertutup saat pertama dibuka.</span><span class="ik-settings-toolbar-count">${adminView?ADMIN_CARDS.length:SETTINGS_CARDS.length} kategori</span></div>
   <div class="ik-settings-grid"><div class="ik-settings-main">
    ${adminView?ADMIN_CARDS.map(c=>settingCard(c,STATE.adminSection,true)).join(''):SETTINGS_CARDS.map(c=>settingCard(c,STATE.settingSection)).join('')}
   </div><aside class="ik-settings-aside">
    <div class="ik-settings-summary"><div class="ik-settings-userline"><div class="ik-settings-avatar">${escapeHTML(u.initials)}</div><div><strong>${escapeHTML(u.name)}</strong><small>${escapeHTML(u.email)}</small></div></div>
     <div class="ik-settings-summary-divider"></div><div class="ik-settings-summary-item"><span>Hak akses</span><strong>${isAdmin()?'Super Admin':'User'}</strong></div>
-    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.9.1</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
+    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.9.3</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
    ${!adminView&&isAdmin()?`<button class="ik-settings-admin-link" data-action="nav-admin-settings">${icon('shield')} Buka Panel Super Admin ${icon('arrow-right')}</button>`:''}
    ${adminView?`<button class="ik-settings-admin-link" data-action="nav-settings">${icon('arrow-left')} Kembali ke Pengaturan Pribadi</button>`:''}
    <div class="ik-settings-hint"><strong>${icon('lock')} Privasi tetap utama</strong><p>Pengaturan pribadimu tidak memberikan akses ke data pengguna lain. Perubahan hak Super Admin hanya berlaku setelah diverifikasi oleh Supabase.</p></div>
   </aside></div>
  </section>`;
+}
+function canSwitchAdminAccordion(nextId){
+ if(nextId===STATE.adminSection && !STATE.adminSection)return true;
+ if(STATE.adminSection==='readiness'&&hasBetaDraft()){
+  if(!window.confirm('Catatan audit beta belum disimpan. Tutup bagian ini dan batalkan perubahan?'))return false;
+  STATE.betaDrafts={};
+ }
+ if(STATE.adminSection==='job-listings'&&jobs.hasUnsaved()){
+  if(!window.confirm('Perubahan lowongan belum disimpan. Tutup bagian ini dan batalkan perubahan?'))return false;
+  jobs.discard();
+ }
+ if(STATE.adminSection==='platform'){
+  const form=document.querySelector('#admin-announcement-form [name="announcement"]');
+  if(form && form.value!==STATE.platformNotice){
+   if(!window.confirm('Pengumuman belum disimpan. Tutup bagian ini dan batalkan perubahan?'))return false;
+  }
+ }
+ return true;
 }
 function settingsCardContent(id){const u=userInfo();
  if(id==='profile')return `<div class="ik-setting-readonly"><p>Identitas profesional cukup diperbarui di <strong>Profil Karier</strong>. Nama pada dashboard dan CV menggunakan data yang sama sehingga tidak perlu diperbarui dua kali.</p><div class="ik-setting-detail"><span class="ik-detail-label">Nama di IKHTIAR</span><strong>${escapeHTML(u.name)}</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Email untuk login</span><strong>${escapeHTML(u.email)}</strong></div><button type="button" class="btn btn-primary" data-action="nav-career">${icon('user')} Buka Profil Karier</button></div>`;
@@ -449,7 +476,7 @@ function settingsCardContent(id){const u=userInfo();
   <div class="ik-setting-detail"><span class="ik-detail-label">Salinan data pribadi</span><p>Unduh salinan data yang tersimpan dalam modul Profil Karier, CV, Portofolio, Lowongan Tersimpan, dan Lamaran. Unduhan berupa JSON di perangkat Anda, bukan tautan publik.</p><button type="button" class="btn btn-outline" data-action="settings-export-data" ${STATE.demo||!STATE.session||STATE.dataExportBusy?'disabled':''}>${STATE.dataExportBusy?'Menyiapkan ekspor...':`${icon('file')} Unduh Data Saya (.json)`}</button><small class="ik-export-warning">File ekspor dapat berisi nomor telepon, pengalaman kerja, catatan lamaran, dan data sensitif. Simpan secara pribadi. Sesi login dan password tidak disertakan.</small></div>
   <div class="ik-info-line">${icon('lock')} Penghapusan akun mandiri belum tersedia. Ekspor hanya mencakup data modul IKHTIAR yang terdaftar, bukan log internal penyedia layanan.</div><button class="btn btn-outline" type="button" data-action="nav-trust">${icon('shield')} Buka Pusat Kepercayaan</button></div>`;
  if(id==='help')return `<div class="ik-setting-readonly"><p>Satu tempat untuk melaporkan masalah aplikasi, bantuan data, atau lowongan mencurigakan. Riwayat laporan tersimpan di akun yang sama.</p><button type="button" class="btn btn-primary" data-action="nav-support">${icon('shield')} Buka Pusat Bantuan</button><p class="ik-setting-fineprint">Saat ini perlu login. Kanal bantuan untuk pemulihan akun terkunci masih dalam persiapan.</p></div>`;
- if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.9.1 — Mobile UX & Beta Polish</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div><div class="ik-setting-detail"><span class="ik-detail-label">Informasi resmi dan privasi</span><p>Cara kerja IKHTIAR, informasi yang dipublikasikan, dan batasan fitur keamanan.</p><button class="btn btn-outline" type="button" data-action="nav-trust">${icon('shield')} Pusat Kepercayaan</button></div></div>`;
+ if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.9.3 — UI Polish & Accordion Cleanup</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div><div class="ik-setting-detail"><span class="ik-detail-label">Informasi resmi dan privasi</span><p>Cara kerja IKHTIAR, informasi yang dipublikasikan, dan batasan fitur keamanan.</p><button class="btn btn-outline" type="button" data-action="nav-trust">${icon('shield')} Pusat Kepercayaan</button></div></div>`;
  return '';
 }
 function adminCardContent(id){
@@ -649,7 +676,7 @@ function trustPage(){
   <section class="ik-trust-section"><h2>Kontrol data & batasan yang terbuka</h2><ul><li>Data profil dan lamaran dapat diperbarui dari menu pemilik masing-masing.</li><li>Di Pengaturan → Privasi & Data, pengguna login dapat mengunduh salinan data modul dalam JSON.</li><li>Penghapusan akun mandiri, permintaan data dari penyedia eksternal, dan kebijakan retensi formal belum disediakan pada tahap ini.</li><li>Kanal bantuan untuk pengguna yang tidak bisa login, peninjauan kebijakan formal, dan uji keamanan produksi harus diselesaikan sebelum peluncuran publik.</li></ul></section>
   <section class="ik-trust-caution"><div>${icon('info')}</div><div><h2>Tips menghindari penipuan rekrutmen</h2><p>Verifikasi alamat perusahaan dan sumber lowongan. Jangan membagikan OTP, kata sandi, atau kode pemulihan kepada pihak yang mengaku sebagai admin atau perekrut. Untuk kasus mencurigakan, hentikan proses dan periksa melalui kanal resmi perusahaan.</p></div></section>
   <section class="ik-trust-section ik-trust-links"><h2>Dokumen & bantuan</h2><p>Dokumen privasi dan ketentuan berikut masih berbentuk draf. Konten harus ditinjau pengelola sebelum beta publik.</p><div class="ik-trust-link-actions"><button type="button" class="btn btn-outline" data-action="nav-privacy">Kebijakan Privasi (Draf)</button><button type="button" class="btn btn-outline" data-action="nav-terms">Ketentuan Layanan (Draf)</button><button type="button" class="btn btn-primary" data-action="nav-support">Pusat Bantuan</button></div></section>
-  <footer class="ik-trust-footer"><span>IKHTIAR · Your Career, Your Move. · v0.9.1</span><button type="button" data-action="trust-back">${backLabel} ${icon('arrow-right')}</button></footer></div>
+  <footer class="ik-trust-footer"><span>IKHTIAR · Your Career, Your Move. · v0.9.3</span><button type="button" data-action="trust-back">${backLabel} ${icon('arrow-right')}</button></footer></div>
  </main>`;
 }
 function legalPage(kind){
@@ -989,9 +1016,9 @@ ROOT.addEventListener('click',async evt=>{
  if(await jobs.handleClick(action,actionEl))return;
  if(await career.handleClick(action,actionEl))return;
  if(action==='nav-dashboard')go('dashboard');
- if(action==='nav-settings'){STATE.settingSection='profile';go('settings');}
+ if(action==='nav-settings'){STATE.settingSection='';go('settings');}
  if(action==='nav-admin-settings'){
-  if(isAdmin()){STATE.adminSection='platform';go('admin-settings');}
+  if(isAdmin()){STATE.adminSection='';go('admin-settings');}
   else toast('Akses hanya untuk Super Admin yang diverifikasi oleh Supabase.');
  }
  if(action==='settings-section'){
@@ -1000,7 +1027,9 @@ ROOT.addEventListener('click',async evt=>{
  }
  if(action==='admin-section'&&isAdmin()){
   const id=actionEl.dataset.section;
-  if(ADMIN_CARDS.some(c=>c.id===id)){STATE.adminSection=STATE.adminSection===id?'':id;render();if(STATE.adminSection==='users'&&!STATE.adminUsersLoaded)loadAdminUsers();if(STATE.adminSection==='audit'&&!STATE.adminAuditLoaded)loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();if(STATE.adminSection==='overview'&&!STATE.adminOverviewLoaded)loadAdminOverview();if(STATE.adminSection==='support')support.loadAdmin();if(STATE.adminSection==='readiness')loadBetaGate();}
+  if(ADMIN_CARDS.some(c=>c.id===id)){
+   if(!canSwitchAdminAccordion(id))return;
+   STATE.adminSection=STATE.adminSection===id?'':id;render();if(STATE.adminSection==='users'&&!STATE.adminUsersLoaded)loadAdminUsers();if(STATE.adminSection==='audit'&&!STATE.adminAuditLoaded)loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();if(STATE.adminSection==='overview'&&!STATE.adminOverviewLoaded)loadAdminOverview();if(STATE.adminSection==='support')support.loadAdmin();if(STATE.adminSection==='readiness')loadBetaGate();}
  }
  if(action==='admin-refresh-users'&&isAdmin())await loadAdminUsers();
  if(action==='admin-refresh-audit'&&isAdmin())await loadAdminAudit();
