@@ -1,8 +1,8 @@
 import { CONFIG } from '../config.js';
-import { createCareerModule } from './career.js?v=0.9.1';
-import { createPortfolioModule } from './portfolio.js?v=0.9.1';
-import { createJobsModule } from './jobs.js?v=0.9.1';
-import { createSupportModule } from './support.js?v=0.9.1';
+import { createCareerModule } from './career.js?v=0.9.2';
+import { createPortfolioModule } from './portfolio.js?v=0.9.2';
+import { createJobsModule } from './jobs.js?v=0.9.2';
+import { createSupportModule } from './support.js?v=0.9.2';
 
 const ROOT = document.getElementById('app');
 const TOAST = document.getElementById('toast');
@@ -261,8 +261,8 @@ function navAction(type,title,ic,isActive=false){
  const action=type==='dashboard'?'nav-dashboard':type==='settings'?'nav-settings':type==='admin-settings'?'nav-admin-settings':type==='career'?'nav-career':type==='portfolio'?'nav-portfolio':type==='cv'?'nav-cv':type==='job'?'nav-jobs':type==='applications'?'nav-applications':type==='support'?'nav-support':'placeholder';
  return `<button class="nav-item ${isActive?'active':''}" data-action="${action}" ${action==='placeholder'?`data-label="${escapeHTML(title)}"`:''} ${isActive?'aria-current="page"':''}>${icon(ic)} ${title}</button>`;
 }
-// IKHTIAR v0.9.1 — centered KlasKu-style U-curve, clean labels and stable tab selection.
-// One central floating Beranda icon, with secondary destinations in More.
+// IKHTIAR v0.9.2 — one moving active indicator and matching curved dock.
+// Secondary routes use the Menu tab; opening Menu highlights that same tab.
 const MOBILE_PRIMARY_NAV=[
  ['user','Profil','nav-career','career'],
  ['file','CV','nav-cv','cv'],
@@ -270,15 +270,56 @@ const MOBILE_PRIMARY_NAV=[
  ['briefcase','Loker','nav-jobs','jobs'],
  ['menu','Menu','nav-mobile-menu','more']
 ];
+function ikNavIndex(view){
+ const found=MOBILE_PRIMARY_NAV.findIndex(row=>row[3]===view);
+ return found<0?4:found;
+}
+function ikNavShapeAt(index){
+ const cx=50+100*index;
+ const n=value=>Number(value.toFixed(3));
+ return `M0 14 H${n(cx-46)} C${n(cx-37)} 14 ${n(cx-34)} 22 ${n(cx-29)} 34 C${n(cx-22)} 61 ${n(cx+22)} 61 ${n(cx+29)} 34 C${n(cx+34)} 22 ${n(cx+37)} 14 ${n(cx+46)} 14 H500 V110 H0 Z`;
+}
+function ikDockPosition(nav,position){
+ const bubble=nav.querySelector('.ik-mobile-nav-bubble');
+ const shape=nav.querySelector('.ik-mobile-nav-surface path');
+ if(bubble)bubble.style.left=`${10+20*position}%`;
+ if(shape)shape.setAttribute('d',ikNavShapeAt(position));
+ nav.dataset.position=String(position);
+}
+function ikDockSelect(nav,index,animate=true){
+ if(!nav)return;
+ const previous=Number(nav.dataset.position??nav.dataset.activeIndex??index);
+ const end=Math.max(0,Math.min(4,index));
+ if(nav._ikNavAnimation)cancelAnimationFrame(nav._ikNavAnimation);
+ nav.dataset.activeIndex=String(end);
+ nav.querySelectorAll('.ik-mobile-tab').forEach((tab,i)=>{
+  const active=i===end;
+  tab.classList.toggle('active',active);
+  if(active && i!==4)tab.setAttribute('aria-current','page');
+  else tab.removeAttribute('aria-current');
+ });
+ const bubble=nav.querySelector('.ik-mobile-nav-bubble');
+ if(bubble)bubble.innerHTML=icon(MOBILE_PRIMARY_NAV[end][0]);
+ if(!animate || Math.abs(previous-end)<.001 || window.matchMedia('(prefers-reduced-motion:reduce)').matches){
+  ikDockPosition(nav,end);return;
+ }
+ const start=performance.now();
+ const duration=260;
+ const tick=now=>{
+  if(!nav.isConnected){nav._ikNavAnimation=0;return;}
+  const fraction=Math.min(1,(now-start)/duration);
+  const eased=1-Math.pow(1-fraction,3);
+  ikDockPosition(nav,previous+(end-previous)*eased);
+  if(fraction<1)nav._ikNavAnimation=requestAnimationFrame(tick);
+  else nav._ikNavAnimation=0;
+ };
+ nav._ikNavAnimation=requestAnimationFrame(tick);
+}
 function mobileBottomNav(displayName){
- // KlasKu-style: the single U-shaped dock is permanently centred on Beranda.
- // The currently selected secondary tab is highlighted, without adding another notch.
- const primaryIndex=MOBILE_PRIMARY_NAV.findIndex(row=>row[3]===STATE.view);
- const activeIndex=primaryIndex<0?4:primaryIndex;
+ const activeIndex=ikNavIndex(STATE.view);
  const nav=MOBILE_PRIMARY_NAV.map(([ic,label,action,view],index)=>{
   const active=index===activeIndex;
-  const isHome=view==='dashboard';
-  return `<button type="button" class="ik-mobile-tab${active?' active':''}${isHome?' ik-mobile-tab--home':''}" data-action="${action}" aria-label="${label}${view==='more'?' dan navigasi lainnya':''}" ${active&&view!=='more'?'aria-current="page"':''} ${view==='more'?'aria-controls="ik-mobile-menu" aria-expanded="false"':''}><span class="ik-mobile-tab-icon">${icon(ic)}</span><span class="ik-mobile-tab-label">${label}</span></button>`;
+  return `<button type="button" class="ik-mobile-tab${active?' active':''}" data-action="${action}" aria-label="${label}${view==='more'?' dan navigasi lainnya':''}" ${active&&view!=='more'?'aria-current="page"':''} ${view==='more'?'aria-controls="ik-mobile-menu" aria-expanded="false"':''}><span class="ik-mobile-tab-icon">${icon(ic)}</span><span class="ik-mobile-tab-label">${label}</span></button>`;
  }).join('');
  const secondary=[
   ['folder','Portofolio','Karya dan tautan publik','nav-portfolio',STATE.view==='portfolio'],
@@ -287,7 +328,10 @@ function mobileBottomNav(displayName){
   ['shield','Bantuan & Laporan','Riwayat tiket dan bantuan','nav-support',STATE.view==='support'],
   ...(isAdmin()?[['shield','Panel Super Admin','Kelola IKHTIAR','nav-admin-settings',STATE.view==='admin-settings']]:[])
  ];
- return `<nav class="bottom-nav ik-curved-bottom-nav" aria-label="Navigasi utama seluler"><svg class="ik-mobile-nav-surface" aria-hidden="true" focusable="false" viewBox="0 0 400 100" preserveAspectRatio="none"><path d="M0 14 H153 C169 14 170 26 177 38 C185 82 215 82 223 38 C230 26 231 14 247 14 H400 V100 H0 Z" /></svg>${nav}</nav>
+ return `<nav class="bottom-nav ik-curved-bottom-nav" data-active-index="${activeIndex}" data-position="${activeIndex}" aria-label="Navigasi utama seluler">
+  <svg class="ik-mobile-nav-surface" aria-hidden="true" focusable="false" viewBox="0 0 500 110" preserveAspectRatio="none"><path d="${ikNavShapeAt(activeIndex)}" /></svg>
+  <div class="ik-mobile-nav-bubble" aria-hidden="true" style="left:${10+20*activeIndex}%">${icon(MOBILE_PRIMARY_NAV[activeIndex][0])}</div>
+  ${nav}</nav>
  <div class="ik-mobile-menu-layer" id="ik-mobile-menu" hidden>
   <button type="button" class="ik-mobile-menu-scrim" data-action="nav-mobile-close" tabindex="-1" aria-label="Tutup menu"></button>
   <section class="ik-mobile-menu-panel" role="dialog" aria-modal="true" aria-labelledby="ik-mobile-menu-title" tabindex="-1">
@@ -298,13 +342,16 @@ function mobileBottomNav(displayName){
   </section>
  </div>`;
 }
-function setMobileMenu(open){
+function setMobileMenu(open,restoreIndicator=true){
  const layer=ROOT.querySelector('#ik-mobile-menu');
  if(!layer)return;
  layer.hidden=!open;
- const trigger=ROOT.querySelector('[data-action="nav-mobile-menu"]');
+ const trigger=ROOT.querySelector('.ik-curved-bottom-nav [data-action="nav-mobile-menu"]');
  trigger?.setAttribute('aria-expanded',String(open));
  document.body.classList.toggle('ik-mobile-menu-open',open);
+ const nav=ROOT.querySelector('.ik-curved-bottom-nav');
+ if(open)ikDockSelect(nav,4);
+ else if(restoreIndicator)ikDockSelect(nav,ikNavIndex(STATE.view));
  if(open)layer.querySelector('.ik-mobile-menu-close')?.focus();
  else trigger?.focus();
 }
@@ -796,8 +843,15 @@ function render(){
  document.body.classList.toggle('dark',['dashboard','settings','admin-settings','career','cv','portfolio','jobs','applications','support'].includes(STATE.view)&&STATE.dark);
  document.body.classList.toggle('security-modal-open',STATE.logoutDialog||!!STATE.adminRoleDialog);
  const sidebarPosition=ROOT.querySelector('.sidebar')?.scrollTop??0;
+ const preservedMobileDock=ROOT.querySelector('nav.ik-curved-bottom-nav');
  ROOT.innerHTML=(STATE.view==='trust'?trustPage():['privacy','terms'].includes(STATE.view)?legalPage(STATE.view):STATE.view==='splash'?splash():STATE.view==='onboarding'?onboarding():STATE.view==='portfolio-preview'||STATE.view.startsWith('p/')?portfolio.publicPage():STATE.view.startsWith('resume/')?career.publicPage():['dashboard','settings','admin-settings','career','cv','portfolio','jobs','applications','support'].includes(STATE.view)?dashboard():auth())+logoutModal()+adminRoleConfirmModal();
  const sidebar=ROOT.querySelector('.sidebar');if(sidebar)sidebar.scrollTop=sidebarPosition;
+ const freshDock=ROOT.querySelector('nav.ik-curved-bottom-nav');
+ if(preservedMobileDock&&freshDock){
+  const nextIndex=Number(freshDock.dataset.activeIndex);
+  freshDock.replaceWith(preservedMobileDock);
+  ikDockSelect(preservedMobileDock,nextIndex);
+ }
 }
 function openLogoutDialog(scope='local'){
  if(STATE.busyLogout || STATE.logoutDialog)return;
@@ -904,7 +958,7 @@ ROOT.addEventListener('click',async evt=>{
  }
  if(action==='nav-mobile-close'){setMobileMenu(false);return;}
  const existingMenuLayer=ROOT.querySelector('#ik-mobile-menu');
- if(existingMenuLayer&&!existingMenuLayer.hidden)setMobileMenu(false);
+ if(existingMenuLayer&&!existingMenuLayer.hidden)setMobileMenu(false,false);
  if(action==='brand-home'){evt.preventDefault();go(STATE.demo||STATE.session?'dashboard':'auth');}
  if(action==='nav-trust')go('trust');
  if(action==='nav-privacy')go('privacy');
