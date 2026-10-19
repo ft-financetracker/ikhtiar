@@ -1,7 +1,7 @@
-/* IKHTIAR PWA v0.9.2 — network-first for app shell, safe offline fallback. */
-const CACHE='ikhtiar-app-v0.9.2';
+/* IKHTIAR PWA v0.9.3 — network-first for app shell, safe offline fallback. */
+const CACHE='ikhtiar-app-v0.9.3';
 const BASE=new URL('./',self.registration.scope);
-const CORE=['./','./index.html','./src/styles.css?v=0.9.2','./src/app.js?v=0.9.2','./src/career.js?v=0.9.2','./src/portfolio.js?v=0.9.2','./src/jobs.js?v=0.9.2','./src/support.js?v=0.9.2','./manifest.webmanifest','./assets/brand/logo-mark.png','./assets/brand/icon-192.png','./assets/brand/icon-512.png'].map(p=>new URL(p,BASE).toString());
+const CORE=['./','./index.html','./src/styles.css?v=0.9.3','./src/app.js?v=0.9.3','./src/career.js?v=0.9.3','./src/portfolio.js?v=0.9.3','./src/jobs.js?v=0.9.3','./src/support.js?v=0.9.3','./manifest.webmanifest','./assets/brand/logo-mark.png','./assets/brand/icon-192.png','./assets/brand/icon-512.png'].map(p=>new URL(p,BASE).toString());
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)));});
 self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting();});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('ikhtiar-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
