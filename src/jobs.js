@@ -1,11 +1,11 @@
-import { createCommunityJobsModule } from './community-jobs.js?v=0.9.4';
+import { createCommunityJobsModule } from './community-jobs.js?v=0.9.6';
 /* IKHTIAR M6 v0.5.0 — Job Explorer, private bookmarks, and application tracker.
  * No scraping and no fictitious opportunities: directory rows originate from Super Admin.
  * RLS enforces ownership and admin write permission server-side.
  */
-export function createJobsModule({state,render,toast,go,icon,escapeHTML,isAdmin,prepareCV}){
+export function createJobsModule({state,render,toast,go,icon,escapeHTML,isAdmin,askConfirm,prepareCV}){
  const E=escapeHTML;
- const community=createCommunityJobsModule({state,render,toast,icon,escapeHTML,isAdmin});
+ const community=createCommunityJobsModule({state,render,toast,icon,escapeHTML,isAdmin,askConfirm});
  const own=()=>state.session?.user?.id;
  const usable=()=>!!own()&&!state.demo&&!!state.supabase;
  const STATUS=[['draft','Rencana'],['applied','Terkirim'],['screening','Seleksi'],['interview','Wawancara'],['offer','Penawaran'],['accepted','Diterima'],['rejected','Tidak lolos'],['withdrawn','Dibatalkan']];
@@ -49,12 +49,25 @@ export function createJobsModule({state,render,toast,go,icon,escapeHTML,isAdmin,
  function title(){return `<header class="ik-jobs-heading"><div><span class="ik-jobs-eyebrow">IKHTIAR / PELUANG KARIER</span><h1>${state.view==='applications'?'Lamaran Saya':section==='community'?'Lowongan Saya':'Cari Lowongan'}</h1><p>${state.view==='applications'?'Pantau lamaran, jadwal tindak lanjut, dan CV yang sudah kamu siapkan.':section==='community'?'Ajukan lowongan untuk ditinjau Super Admin sebelum tampil ke publik.':'Jelajahi lowongan, atau bagikan peluang kerja yang sumbernya bisa diperiksa.'}</p></div><button type="button" class="ik-jobs-soft-action" data-action="jobs-refresh" ${loading?'disabled':''}>${icon('settings')} Perbarui data</button></header>`;}
  function miniStat(){const x=stats();return `<div class="ik-jobs-stats"><div><span>${icon('bookmark')} Tersimpan</span><strong>${x.saved}</strong></div><div><span>${icon('briefcase')} Lamaran</span><strong>${x.applications}</strong></div><div><span>${icon('sparkles')} Dalam proses</span><strong>${x.active}</strong></div></div>`;}
  function notice(){return error?`<div class="ik-jobs-note ik-jobs-error" role="alert">${E(error)} <button type="button" data-action="jobs-refresh">Coba lagi</button></div>`:loading&&!loaded?'<div class="ik-jobs-note">Memuat data terbaru dari Supabase...</div>':'';}
+ // Directory cards stay compact; the complete source text remains available on demand.
+ const JOB_HEADINGS=['TUGAS & TANGGUNG JAWAB','KUALIFIKASI / PERSYARATAN','FASILITAS / BENEFIT','CARA MELAMAR'];
+ function directoryDetails(raw){
+  const sections=[];let current={name:'Informasi pekerjaan',body:''};
+  for(const line of String(raw||'').split(/\r?\n/)){
+   if(JOB_HEADINGS.includes(line.trim())){if(current.body.trim())sections.push(current);current={name:line.trim(),body:''};continue;}
+   current.body+=(current.body?'\n':'')+line;
+  }
+  if(current.body.trim())sections.push(current);
+  const first=(sections[0]?.body||String(raw||'')).replace(/\s+/g,' ').trim();
+  const short=first.length>175?first.slice(0,175).trimEnd()+'…':first;
+  return {short,more:sections.map(x=>`<section><h4>${E(x.name)}</h4><p>${E(x.body.trim())}</p></section>`).join('')};
+ }
  function jobCard(j,source='directory'){
   const manual=source==='saved';const isSaved=manual||saved.some(s=>s.listing_id===j.id);
   const url=safeUrl(j.source_url);
   return `<article class="ik-job-card"><div class="ik-job-top"><span class="ik-job-companymark">${E((j.company_name||'?').charAt(0).toUpperCase())}</span><div class="ik-job-cardhead"><h3>${E(j.position_name)}</h3><p>${E(j.company_name)}</p></div>${manual?'<span class="ik-job-bookmark">Tersimpan</span>':isSaved?`<span class="ik-job-bookmark">${icon('bookmark')} Disimpan</span>`:''}</div>
   <div class="ik-job-meta"><span>${icon('briefcase')} ${E(modeLabel(j.work_mode))}</span>${j.location_name?`<span>${icon('calendar')} ${E(j.location_name)}</span>`:''}${!manual?`<span>${E(typeLabel(j.employment_type))}</span>`:''}</div>
-  ${!manual&&j.details?`<p class="ik-job-excerpt">${E(j.details)}</p>`:''}
+  ${!manual&&j.details?`<p class="ik-job-excerpt">${E(directoryDetails(j.details).short)}</p><details class="ik-job-listing-details"><summary>${icon('chevron-down')} Rincian pekerjaan <span>Selengkapnya</span></summary><div class="ik-job-listing-detailbody">${directoryDetails(j.details).more}</div></details>`:''}
   ${!manual?`<p class="ik-job-source">${j.submission_id?'Dibagikan komunitas · Ditinjau Admin · ':''}Sumber: ${E(j.source_name||'Tautan perusahaan')} · Dicatat ${dateFmt(j.created_at)}${j.closing_date?` · Batas ${dateFmt(j.closing_date)}`:''}</p>`:j.note?`<p class="ik-job-source">${E(j.note)}</p>`:''}
   <div class="ik-job-actions">${url?`<a class="ik-job-action-outline" href="${E(url)}" target="_blank" rel="noopener noreferrer">${icon('arrow-right')} Buka sumber</a>`:''}
   ${manual?`<button type="button" class="ik-job-action" data-action="jobs-apply-saved" data-id="${E(j.id)}">Catat Lamaran</button><button type="button" class="ik-job-action-outline" data-action="jobs-prepare-cv" data-id="${E(j.id)}">Buat CV</button><button type="button" class="ik-job-action-minor" data-action="jobs-delete-saved" data-id="${E(j.id)}">Hapus</button>`:!isSaved?`<button class="ik-job-action" type="button" data-action="jobs-save-listing" data-id="${E(j.id)}">${icon('bookmark')} Simpan</button>`:`<button class="ik-job-action" type="button" data-action="jobs-open-saved">Lihat Tersimpan</button>`}</div></article>`;
@@ -86,7 +99,7 @@ export function createJobsModule({state,render,toast,go,icon,escapeHTML,isAdmin,
   return `<section class="ik-jobs-page">${title()}${miniStat()}${notice()}<div class="ik-jobs-tabs"><button class="${section==='directory'?'active':''}" type="button" data-action="jobs-tab" data-tab="directory">Jelajahi Lowongan</button><button class="${section==='saved'?'active':''}" type="button" data-action="jobs-tab" data-tab="saved">Tersimpan (${saved.length})</button><button class="${section==='community'?'active':''}" type="button" data-action="jobs-tab" data-tab="community">Lowongan Saya</button></div>${formMode==='manual'?manualForm():section==='community'?community.page():section==='saved'?savedPage():directory()}<div class="ik-jobs-footnote">${icon('shield')} Cek syarat, tenggat, dan keaslian rekrutmen pada situs sumber. Jangan pernah membayar biaya rekrutmen yang mencurigakan.</div></section>`;
  }
  function begin(mode, data={}){if(!checkReady())return;formMode=mode;formDraft={...data};formError='';formDirty=false;render();document.getElementById('jobs-editor-heading')?.scrollIntoView({behavior:'smooth',block:'start'});}
- function cancel(){if(formDirty&&!window.confirm('Ada perubahan yang belum disimpan. Batalkan?'))return;formMode='';formDirty=false;formError='';formDraft={};render();}
+ async function cancel(){if(formDirty&&!await askConfirm('Ada perubahan yang belum disimpan. Batalkan?'))return;formMode='';formDirty=false;formError='';formDraft={};render();}
  function onInput(el){if(community.onInput(el))return true;if(el.closest?.('#jobs-manual-form,#jobs-application-form')){formDraft[el.name]=el.value;formDirty=true;return true;}if(el.closest?.('#jobs-admin-form')){if(adminForm)adminForm[el.name]=el.type==='checkbox'?el.checked:el.value;adminDirty=true;return true;}return false;}
  async function saveFromListing(id){if(!checkReady()||formBusy)return;const j=listings.find(x=>x.id===id);if(!j)return;if(saved.some(x=>x.listing_id===id)){toast('Lowongan sudah tersimpan.');return;}formBusy=true;
   const user=own();try{const payload={user_id:user,listing_id:j.id,company_name:j.company_name,position_name:j.position_name,location_name:j.location_name,work_mode:j.work_mode,source_url:j.source_url,note:''};const {data,error:dbErr}=await state.supabase.from('ik_saved_jobs').insert(payload).select('id,listing_id,company_name,position_name,location_name,work_mode,source_url,note,created_at').single();if(dbErr)throw dbErr;if(user!==own())return;saved.unshift(data);toast('Lowongan disimpan. Lanjutkan ke Lamaran Saya saat melamar.');}
@@ -101,7 +114,7 @@ export function createJobsModule({state,render,toast,go,icon,escapeHTML,isAdmin,
   if(p.cv_id&&!cv.some(x=>x.id===p.cv_id)){formError='CV tidak ditemukan. Pilih CV milik akunmu.';render();return;}
   formBusy=true;const user=own();try{const cols='id,saved_job_id,cv_id,company_name,position_name,source_url,status,applied_on,follow_up_on,note,updated_at,created_at';const query=d.id?state.supabase.from('ik_job_applications').update(p).eq('id',d.id).eq('user_id',user):state.supabase.from('ik_job_applications').insert(p);const {data,error:dbErr}=await query.select(cols).single();if(dbErr)throw dbErr;if(user!==own())return;apps=d.id?apps.map(x=>x.id===data.id?data:x):[data,...apps];apps.sort((a,b)=>String(b.updated_at).localeCompare(String(a.updated_at)));formMode='';formDirty=false;formDraft={};toast('Lamaran dan status berhasil disimpan.');}catch(e){console.warn('IKHTIAR M6 application:',e?.message||e);formError='Lamaran belum berhasil disimpan. Pastikan CV dan lowongan milik akunmu.';}finally{formBusy=false;if(user===own())render();}
  }
- async function deleteOwned(kind,id){if(!checkReady())return;const isApp=kind==='application';const arr=isApp?apps:saved;if(!arr.some(x=>x.id===id))return;if(!window.confirm(isApp?'Hapus catatan lamaran ini?':'Hapus lowongan dari daftar tersimpan? Lamaran yang sudah dicatat tetap ada.'))return;const user=own(),table=isApp?'ik_job_applications':'ik_saved_jobs';try{const {error:dbErr}=await state.supabase.from(table).delete().eq('id',id).eq('user_id',user);if(dbErr)throw dbErr;if(user!==own())return;if(isApp)apps=apps.filter(x=>x.id!==id);else saved=saved.filter(x=>x.id!==id);toast(isApp?'Catatan lamaran dihapus.':'Lowongan dihapus dari tersimpan.');render();}catch(e){toast('Gagal menghapus data. Coba kembali.');}}
+ async function deleteOwned(kind,id){if(!checkReady())return;const isApp=kind==='application';const arr=isApp?apps:saved;if(!arr.some(x=>x.id===id))return;if(!await askConfirm(isApp?'Hapus catatan lamaran ini?':'Hapus lowongan dari daftar tersimpan? Lamaran yang sudah dicatat tetap ada.'))return;const user=own(),table=isApp?'ik_job_applications':'ik_saved_jobs';try{const {error:dbErr}=await state.supabase.from(table).delete().eq('id',id).eq('user_id',user);if(dbErr)throw dbErr;if(user!==own())return;if(isApp)apps=apps.filter(x=>x.id!==id);else saved=saved.filter(x=>x.id!==id);toast(isApp?'Catatan lamaran dihapus.':'Lowongan dihapus dari tersimpan.');render();}catch(e){toast('Gagal menghapus data. Coba kembali.');}}
  async function loadAdmin(force=false){if(!usable()||!isAdmin()||adminLoading||(adminLoaded&&!force))return;adminLoading=true;adminError='';const id=own(),serial=++adminRequest;
   try{const {data,error:dbErr}=await state.supabase.from('ik_job_listings').select('*').order('created_at',{ascending:false}).limit(100);if(dbErr)throw dbErr;if(serial!==adminRequest||own()!==id||!isAdmin())return;adminListings=data||[];adminLoaded=true;}
   catch(e){if(serial===adminRequest&&own()===id){console.warn('IKHTIAR M6 admin:',e?.message||e);adminError='Direktori admin tidak dapat dimuat. Periksa SQL M6 dan izin Super Admin.';}}
@@ -118,19 +131,19 @@ export function createJobsModule({state,render,toast,go,icon,escapeHTML,isAdmin,
   adminBusy=true;adminError='';const id=own();try{const query=d.id?state.supabase.from('ik_job_listings').update(p).eq('id',d.id):state.supabase.from('ik_job_listings').insert({...p,created_by:id});const {data,error:dbErr}=await query.select('*').single();if(dbErr)throw dbErr;if(id!==own())return;adminListings=d.id?adminListings.map(j=>j.id===data.id?data:j):[data,...adminListings];adminForm=null;adminDirty=false;adminLoaded=true;loaded=false;toast('Lowongan admin tersimpan. Status publikasi sesuai pilihan.');}
   catch(e){console.warn('IKHTIAR M6 admin save:',e?.message||e);adminError='Gagal menyimpan. Periksa koneksi, URL, dan izin SQL M6.';}finally{adminBusy=false;if(id===own())render();}
  }
- async function deleteAdmin(id){if(!isAdmin()||!adminListings.some(x=>x.id===id))return;if(!window.confirm('Hapus listing ini dari direktori? Catatan tersimpan pengguna tidak ikut dihapus.'))return;const user=own();try{const {error:dbErr}=await state.supabase.from('ik_job_listings').delete().eq('id',id);if(dbErr)throw dbErr;if(user!==own())return;adminListings=adminListings.filter(j=>j.id!==id);loaded=false;toast('Listing dihapus dari direktori.');render();}catch(e){toast('Listing belum berhasil dihapus.');}}
+ async function deleteAdmin(id){if(!isAdmin()||!adminListings.some(x=>x.id===id))return;if(!await askConfirm('Hapus listing ini dari direktori? Catatan tersimpan pengguna tidak ikut dihapus.'))return;const user=own();try{const {error:dbErr}=await state.supabase.from('ik_job_listings').delete().eq('id',id);if(dbErr)throw dbErr;if(user!==own())return;adminListings=adminListings.filter(j=>j.id!==id);loaded=false;toast('Listing dihapus dari direktori.');render();}catch(e){toast('Listing belum berhasil dihapus.');}}
  async function handleClick(action,el){
   if(action==='community-new'){section='community';return await community.handleClick(action,el);}
   if(await community.handleClick(action,el))return true;
   if(action==='nav-jobs'){go('jobs');return true;}
   if(action==='nav-applications'){go('applications');return true;}
   if(action==='jobs-refresh'){await load(true);if(isAdmin()&&state.view==='admin-settings')await loadAdmin(true);return true;}
-  if(action==='jobs-tab'){if(hasUnsaved()&&!window.confirm('Perubahan formulir belum disimpan. Batalkan?'))return true;discard();section=['saved','community'].includes(el.dataset.tab)?el.dataset.tab:'directory';render();if(section==='community')community.loadMine();return true;}
+  if(action==='jobs-tab'){if(hasUnsaved()&&!await askConfirm('Perubahan formulir belum disimpan. Batalkan?'))return true;discard();section=['saved','community'].includes(el.dataset.tab)?el.dataset.tab:'directory';render();if(section==='community')community.loadMine();return true;}
   if(action==='jobs-directory'){section='directory';go('jobs');return true;}
   if(action==='jobs-open-saved'){section='saved';go('jobs');return true;}
   if(action==='jobs-filter'){workFilter=['remote','hybrid','onsite'].includes(el.dataset.value)?el.dataset.value:'all';render();return true;}
   if(action==='jobs-add-manual'){begin('manual');return true;}
-  if(action==='jobs-cancel-form'){cancel();return true;}
+  if(action==='jobs-cancel-form'){await cancel();return true;}
   if(action==='jobs-save-listing'){await saveFromListing(el.dataset.id);return true;}
   if(action==='jobs-apply-saved'){startApplication(el.dataset.id);go('applications');return true;}
   if(action==='jobs-prepare-cv'){const j=saved.find(x=>x.id===el.dataset.id);if(j){prepareCV?.(j.company_name,j.position_name);go('cv');}return true;}
@@ -141,14 +154,14 @@ export function createJobsModule({state,render,toast,go,icon,escapeHTML,isAdmin,
   if(action==='jobs-create-cv'){go('cv');return true;}
   if(action==='jobs-admin-new'&&isAdmin()){adminForm={work_mode:'unspecified',employment_type:'unspecified',is_published:false};adminDirty=false;adminError='';render();return true;}
   if(action==='jobs-admin-edit'&&isAdmin()){const d=adminListings.find(x=>x.id===el.dataset.id);if(d){adminForm={...d};adminDirty=false;adminError='';render();}return true;}
-  if(action==='jobs-admin-cancel'){if(adminDirty&&!window.confirm('Batalkan perubahan lowongan admin?'))return true;adminForm=null;adminDirty=false;adminError='';render();return true;}
+  if(action==='jobs-admin-cancel'){if(adminDirty&&!await askConfirm('Batalkan perubahan lowongan admin?'))return true;adminForm=null;adminDirty=false;adminError='';render();return true;}
   if(action==='jobs-admin-delete'&&isAdmin()){await deleteAdmin(el.dataset.id);return true;}
   return false;
  }
- async function handleSubmit(form){if(await community.handleSubmit(form))return true;if(form.id==='jobs-search-form'){const q=String(new FormData(form).get('query')||'').trim().slice(0,100);search=q;render();return true;}
-  if(form.id==='jobs-manual-form'){await saveManual(form);return true;}
-  if(form.id==='jobs-application-form'){await saveApplication(form);return true;}
-  if(form.id==='jobs-admin-form'){await saveAdmin(form);return true;}
+ async function handleSubmit(form){if(await community.handleSubmit(form))return true;if(form.getAttribute('id')==='jobs-search-form'){const q=String(new FormData(form).get('query')||'').trim().slice(0,100);search=q;render();return true;}
+  if(form.getAttribute('id')==='jobs-manual-form'){await saveManual(form);return true;}
+  if(form.getAttribute('id')==='jobs-application-form'){await saveApplication(form);return true;}
+  if(form.getAttribute('id')==='jobs-admin-form'){await saveAdmin(form);return true;}
   return false;
  }
  return {clear,open,load,page,stats,featured,recentApplication,adminPage,loadAdmin,moderationPage:community.adminPage,loadModeration:community.loadAdmin,handleClick,handleSubmit,onInput,hasUnsaved,discard};
