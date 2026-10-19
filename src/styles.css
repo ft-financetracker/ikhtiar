@@ -630,3 +630,77 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,#app::-webkit-scrollbar,#app *::
 @media(max-width:680px){.ik-community-head{align-items:flex-start;flex-direction:column}.ik-community-head>.btn{width:100%}.ik-community-facts{grid-template-columns:1fr 1fr}.ik-community-summary>div,.ik-community-admin-stats>div{padding:12px 10px}.ik-community-summary strong,.ik-community-admin-stats strong{font-size:20px}}
 @media(max-width:430px){.ik-community-formgrid{grid-template-columns:minmax(0,1fr);gap:11px}.ik-community-field.wide{grid-column:1}.ik-community-item-top{gap:8px}.ik-community-item-name{min-width:120px}.ik-community-status{margin-left:0}.ik-community-facts{grid-template-columns:minmax(0,1fr)}.ik-community-summary small,.ik-community-admin-stats span{font-size:9px}.ik-community-form-actions .btn{flex:1}.ik-jobs-sectionbar-actions{width:100%}.ik-jobs-sectionbar-actions .btn{flex:1;min-width:120px}.ik-community-admin .ik-community-head>.ik-community-refresh{width:100%;justify-content:center}}
 @media(prefers-reduced-motion:reduce){.ik-community-extra summary>.i{transition:none}}
+
+
+/* IKHTIAR CV Studio v0.9.5 — three semantic templates, compact and responsive. */
+.ik-cv-type-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 17px}
+.ik-cv-type-card{background:var(--surface);color:var(--text);border:1.5px solid var(--line);border-radius:15px;padding:15px 13px;display:flex;flex-direction:column;text-align:left;gap:7px;min-width:0;min-height:154px;transition:border-color .15s,background-color .15s,transform .15s}
+.ik-cv-type-card:hover{border-color:#91b9fb;transform:translateY(-1px)}.ik-cv-type-card.is-selected{border-color:#2570ed;background:rgba(37,99,235,.065);box-shadow:inset 0 0 0 1px rgba(37,99,235,.12)}
+.ik-cv-type-symbol{display:grid;place-items:center;width:37px;height:37px;background:#eaf2ff;color:#235bd0;border-radius:11px}.ik-cv-type-symbol .i{width:19px;height:19px}
+.ik-cv-type-card strong{font-size:13px;font-weight:800}.ik-cv-type-card small{font-size:10px;line-height:1.65;color:var(--muted);flex:1}
+.ik-cv-type-indicator{font-size:10px;font-weight:800;color:#3769c7}.ik-cv-type-card.is-selected .ik-cv-type-indicator{color:#0c9176}
+.ik-cv-ats-check{border:1px solid var(--line);border-radius:13px;padding:13px 15px;background:var(--soft);margin:0 0 17px}
+.ik-cv-ats-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px}.ik-cv-ats-heading strong{display:inline-flex;align-items:center;gap:6px;font-weight:800}.ik-cv-ats-heading .i{width:16px;height:16px;color:#177e8c}.ik-cv-ats-heading>span{font-size:16px;font-weight:800;color:#2668c7}
+.ik-cv-ats-check-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:11px 0}.ik-cv-ats-check-grid span{font-size:10px;line-height:1.4}.ik-cv-ats-check-grid .is-ready{color:#168269}.ik-cv-ats-check-grid .is-missing{color:#b56528}
+.ik-cv-ats-check p{font-size:10px;line-height:1.6;color:var(--muted);margin:9px 0 0}.ik-cv-quality-link{background:transparent;border:0;color:#2563eb;padding:9px 0 0;font-size:11px;font-weight:800;text-align:left}
+.ik-career-extras{border:1px solid var(--line);border-radius:14px;background:var(--surface);margin:16px 0;overflow:hidden}.ik-career-extras>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;font-size:12px;font-weight:800;cursor:pointer;list-style:none}.ik-career-extras>summary::-webkit-details-marker{display:none}.ik-career-extras>summary:after{content:'+';font-size:21px;color:var(--muted)}.ik-career-extras[open]>summary:after{content:'−'}
+.ik-career-extras>summary small{color:var(--muted);font-size:10px;font-weight:500;flex:1}.ik-career-extras-content{border-top:1px solid var(--line);padding:17px 15px}.ik-career-extras-content>.ik-career-field{display:flex;flex-direction:column}.ik-career-extras-content .ik-career-subhead{margin-top:18px}
+.ik-cv-output-note{font-size:10px;line-height:1.7;color:var(--muted);padding:0 20px 12px}
+/* Preview uses semantic HTML; print styles are self-contained in cv-studio.js */
+.ik-cv-paper.ik-cv-template-ats,.ik-cv-paper.ik-cv-template-resume,.ik-cv-paper.ik-cv-template-creative{font-family:Arial,Helvetica,sans-serif;line-height:1.55;font-size:11px}
+.ik-cv-paper .cv-document-head{border-bottom:2px solid #152944;padding-bottom:13px;margin-bottom:14px}.ik-cv-paper .cv-document-kicker{display:none}.ik-cv-paper .cv-document-head h2{font-size:23px;margin:0 0 5px}.ik-cv-paper .cv-role{font-weight:700}.ik-cv-paper .cv-contact,.ik-cv-paper .cv-links{font-size:10px;word-wrap:break-word;color:#465a77}.ik-cv-paper .cv-links a{color:inherit;text-decoration:none;word-break:break-all}
+.ik-cv-paper .cv-section{margin:14px 0 0}.ik-cv-paper .cv-section>h3{font-size:11px;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px;border-bottom:1px solid #ccd7e3;padding-bottom:4px}.ik-cv-paper .cv-section p{margin:4px 0;white-space:pre-wrap}.ik-cv-paper .cv-section ul{padding-left:18px;margin:5px 0}.ik-cv-paper .cv-section li{margin:2px 0}.ik-cv-paper .cv-entry{margin:0 0 13px}.ik-cv-paper .cv-entry-title{display:flex;justify-content:space-between;align-items:baseline;gap:12px}.ik-cv-paper .cv-entry-title strong{font-size:11px}.ik-cv-paper .cv-entry-title span{font-size:10px;color:#65758a}.ik-cv-paper .cv-entry-sub{color:#64748b}.ik-cv-paper .cv-entry-link{font-size:10px}
+.ik-cv-paper.ik-cv-template-resume{font-size:10.5px}.ik-cv-paper.ik-cv-template-resume .cv-entry{margin-bottom:8px}.ik-cv-paper.ik-cv-template-resume .cv-section{margin-top:10px}
+.ik-cv-paper.ik-cv-template-creative{border-left:6px solid #14b8a6;border-radius:8px}.ik-cv-paper.ik-cv-template-creative .cv-document-head{background:linear-gradient(120deg,#0b2347,#1b4f88);color:#fff;padding:23px 21px;margin:-28px -30px 18px;border:0;border-radius:4px 4px 0 0}.ik-cv-paper.ik-cv-template-creative .cv-document-kicker{display:block;color:#84e8de;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}.ik-cv-paper.ik-cv-template-creative .cv-document-head h2{color:#fff}.ik-cv-paper.ik-cv-template-creative .cv-role,.ik-cv-paper.ik-cv-template-creative .cv-contact,.ik-cv-paper.ik-cv-template-creative .cv-links{color:#e5f2ff}.ik-cv-paper.ik-cv-template-creative .cv-section h3{color:#14539c;border-bottom:2px solid #13aaa2}
+@media(max-width:760px){.ik-cv-type-choices{grid-template-columns:1fr;gap:8px}.ik-cv-type-card{min-height:0;display:grid;grid-template-columns:38px 1fr;column-gap:10px;align-items:center;padding:11px 13px}.ik-cv-type-symbol{grid-row:span 3}.ik-cv-type-card small{font-size:10px}.ik-cv-ats-check-grid{grid-template-columns:1fr}.ik-cv-paper.ik-cv-template-creative .cv-document-head{margin:-19px -14px 18px;padding:18px}.ik-career-extras>summary{flex-wrap:wrap}}
+@media(max-width:360px){.ik-cv-type-card{padding:10px}.ik-cv-ats-check{padding:12px}.ik-cv-paper .cv-entry-title{flex-direction:column;gap:2px}}
+@media print{.ik-cv-paper{box-shadow:none;border:0}.ik-cv-type-choices,.ik-cv-ats-check{display:none}}
+
+.ik-cv-paper.ik-cv-template-ats .cv-entry-title{display:block}.ik-cv-paper.ik-cv-template-ats .cv-entry-title span{display:block;text-align:left;margin-top:2px}
+
+/* IKHTIAR v0.9.6 — branded confirmations, no browser-native dialogs for SPA actions */
+.ik-confirm-backdrop{position:fixed;inset:0;z-index:100100;display:grid;place-items:center;padding:18px;overscroll-behavior:contain;background:rgba(5,13,30,.74);backdrop-filter:blur(3px)}
+.ik-confirm-card{width:min(430px,100%);max-height:min(90dvh,640px);overflow-y:auto;scrollbar-width:none;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:18px;padding:clamp(18px,4vw,25px);box-shadow:0 24px 80px rgba(2,12,35,.38)}
+.ik-confirm-card::-webkit-scrollbar{display:none}.ik-confirm-mark{width:42px;height:42px;border-radius:13px;background:var(--soft);display:grid;place-items:center;color:#2563eb;margin-bottom:14px}.ik-confirm-mark .i{width:21px;height:21px}
+.ik-confirm-card h2{font-size:18px;line-height:1.3;letter-spacing:-.025em;margin:0 0 7px}.ik-confirm-card p{font-size:12px;line-height:1.75;color:var(--muted);margin:0 0 22px;white-space:pre-line}
+.ik-confirm-actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap}.ik-confirm-actions .btn{min-height:42px;border-radius:11px;font-size:12px;padding:0 17px}.ik-confirm-danger{background:#c13239;color:#fff;border-color:transparent}
+.dark .ik-confirm-mark{background:#17335b;color:#8bbcff}
+@media(max-width:420px){.ik-confirm-card{padding:20px}.ik-confirm-actions .btn{flex:1}}
+@media(prefers-reduced-motion:reduce){.ik-confirm-backdrop,.ik-confirm-card{animation:none!important;transition:none!important}}
+
+/* IKHTIAR v0.9.6 — proportionate job submission and moderation details */
+.ik-community-stepbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 18px}
+.ik-community-stepbar>span{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:var(--muted);min-width:0;line-height:1.45}
+.ik-community-stepbar b{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;background:var(--soft);color:#2563eb;font-size:10px}
+.ik-community-stepbar span:first-child b{background:#2563eb;color:#fff}
+.ik-community-block-title{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:0}
+.ik-community-block-title strong{font-size:12px;font-weight:800}.ik-community-block-title small{font-size:10px;color:var(--muted)}
+.ik-community-editor .ik-community-form{gap:16px}.ik-community-field textarea{line-height:1.7;min-height:80px}
+.ik-community-extra{background:var(--surface)}.ik-community-extra summary{gap:9px;min-height:46px;font-size:12px}.ik-community-extra summary>.i:first-child{color:#4a82e5}
+.ik-community-extra[open]{border-color:rgba(37,99,235,.36);background:var(--bg)}.ik-community-extra>.ik-community-formgrid{padding-top:2px}
+.ik-community-review-title{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.ik-community-review-title strong{font-size:12px;font-weight:800}.ik-community-review-title span{font-size:10px;color:var(--muted)}
+.ik-community-sourcebar{display:flex;align-items:center;gap:11px;flex-wrap:wrap;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);min-width:0}
+.ik-community-sourcebar>.i{width:21px;height:21px;color:#2770d8;flex-shrink:0}.ik-community-sourcebar>div{min-width:140px;flex:1;display:grid;gap:3px}
+.ik-community-sourcebar strong{font-size:11px}.ik-community-sourcebar small{font-size:10px;color:var(--muted)}.ik-community-sourcebar .ik-community-link{white-space:nowrap;font-size:10px}
+.ik-community-description{border:1px solid var(--line);border-radius:12px;padding:3px 14px;background:var(--surface)}
+.ik-community-description>section{padding:12px 0;min-width:0}.ik-community-description>section+section{border-top:1px solid var(--line)}
+.ik-community-description h4{font-size:10px;text-transform:uppercase;letter-spacing:.065em;margin:0 0 7px;color:#4280df}
+.ik-community-description p{font-size:12px;line-height:1.85;white-space:pre-wrap;overflow-wrap:anywhere;margin:0;color:var(--text)}
+#ik-community-review-form{gap:13px;margin-top:2px}.ik-community-review-actions{padding-top:2px}
+.ik-community-admin-item .ik-community-item-top{align-items:center}
+@media(max-width:650px){.ik-community-sourcebar>a{width:100%;justify-content:center}.ik-community-stepbar>span{font-size:9px}}
+@media(max-width:375px){.ik-community-stepbar{gap:5px}.ik-community-stepbar>span{font-size:9px}.ik-community-stepbar b{height:20px;width:20px}}
+/* Compact, expandable directory details: avoid 2,500-character listings dominating the feed. */
+.ik-job-listing-details{border:1px solid var(--line);border-radius:11px;margin:9px 0 13px;min-width:0;overflow:hidden;background:var(--bg)}
+.ik-job-listing-details summary{cursor:pointer;display:flex;gap:8px;align-items:center;font-size:11px;font-weight:800;list-style:none;padding:10px 12px;color:var(--text)}
+.ik-job-listing-details summary::-webkit-details-marker{display:none}
+.ik-job-listing-details summary>.i{width:15px;height:15px;color:#3a79df;flex-shrink:0;transition:transform .16s}
+.ik-job-listing-details[open] summary>.i{transform:rotate(180deg)}
+.ik-job-listing-details summary span{font-size:10px;color:var(--muted);font-weight:600;margin-left:auto}
+.ik-job-listing-detailbody{display:grid;gap:0;border-top:1px solid var(--line);padding:0 12px 8px}
+.ik-job-listing-detailbody section{padding:11px 0}
+.ik-job-listing-detailbody section+section{border-top:1px solid var(--line)}
+.ik-job-listing-detailbody h4{font-size:10px;letter-spacing:.045em;text-transform:uppercase;color:#3872d8;margin:0 0 6px}
+.ik-job-listing-detailbody p{font-size:11px;line-height:1.75;color:var(--text);white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+@media(prefers-reduced-motion:reduce){.ik-job-listing-details summary>.i{transition:none}}
