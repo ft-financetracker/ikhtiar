@@ -1,8 +1,8 @@
 import { CONFIG } from '../config.js';
-import { createCareerModule } from './career.js?v=0.9.3';
-import { createPortfolioModule } from './portfolio.js?v=0.9.3';
-import { createJobsModule } from './jobs.js?v=0.9.3';
-import { createSupportModule } from './support.js?v=0.9.3';
+import { createCareerModule } from './career.js?v=0.9.4';
+import { createPortfolioModule } from './portfolio.js?v=0.9.4';
+import { createJobsModule } from './jobs.js?v=0.9.4';
+import { createSupportModule } from './support.js?v=0.9.4';
 
 const ROOT = document.getElementById('app');
 const TOAST = document.getElementById('toast');
@@ -63,7 +63,7 @@ function go(view){
  if(['jobs','applications'].includes(view))jobs.open(view);
  if(view.startsWith('resume/'))career.openPublic(view.slice(7));
  if(view==='support')support.loadOwn();
- if(view==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();if(STATE.adminSection==='overview')loadAdminOverview();if(STATE.adminSection==='support')support.loadAdmin();if(STATE.adminSection==='readiness')loadBetaGate();}
+ if(view==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();if(STATE.adminSection==='moderation')jobs.loadModeration();if(STATE.adminSection==='overview')loadAdminOverview();if(STATE.adminSection==='support')support.loadAdmin();if(STATE.adminSection==='readiness')loadBetaGate();}
 }
 function setTheme(mode){
  if(!THEME_MODES.includes(mode))return;
@@ -261,7 +261,7 @@ function auth(){const isLogin=STATE.mode==='login';const isRegister=STATE.mode==
  ${(isLogin||isRegister)?`<div class="auth-sep">atau lanjutkan dengan</div><button class="btn btn-outline btn-wide" data-action="google-login" ${!STATE.supabase||STATE.busy?'disabled':''}><span class="google-icon">G</span> Lanjutkan dengan Google</button>`:`<button class="btn btn-quiet btn-wide" style="margin-top:14px" data-action="auth-login">Kembali ke Login</button>`}
  ${!STATE.supabase?`<div class="auth-note">${icon('info')} Mode pratinjau. Login asli belum aktif hingga Supabase dikonfigurasi. Gunakan dashboard demo untuk meninjau tampilan.</div>`:''}
  <button class="btn btn-quiet btn-wide" data-action="view-demo" style="margin-top:15px">${icon('eye')} Lihat Dashboard Demo ${icon('arrow-right')}</button>
- </div><footer class="auth-foot">IKHTIAR v0.9.3 · <button type="button" class="ik-footer-link" data-action="nav-trust">Pusat Kepercayaan</button> · <button type="button" class="ik-footer-link" data-action="nav-privacy">Privasi</button> · <button type="button" class="ik-footer-link" data-action="nav-terms">Ketentuan</button><br>Mode demo tidak menyimpan data pengguna ke Supabase.</footer></section></main>`;
+ </div><footer class="auth-foot">IKHTIAR v0.9.4 · <button type="button" class="ik-footer-link" data-action="nav-trust">Pusat Kepercayaan</button> · <button type="button" class="ik-footer-link" data-action="nav-privacy">Privasi</button> · <button type="button" class="ik-footer-link" data-action="nav-terms">Ketentuan</button><br>Mode demo tidak menyimpan data pengguna ke Supabase.</footer></section></main>`;
 }
 function userInfo(){const u=STATE.session?.user;let email=u?.email||'';let meta=u?.user_metadata||{};let name=STATE.demo?'Pengguna Demo':(STATE.careerProfile?.full_name||meta.full_name||meta.name||meta.display_name||email.split('@')[0]||'Pengguna IKHTIAR');return {name,email:STATE.demo?'Akun simulasi · tanpa data asli':email, initials:String(name).trim().slice(0,1).toUpperCase()||'I'};}
 function navAction(type,title,ic,isActive=false){
@@ -404,7 +404,8 @@ const ADMIN_CARDS=[
  {id:'platform',title:'Informasi Platform',sub:'Pengumuman resmi untuk pengguna',icon:'bell'},
  {id:'readiness',title:'Audit & Kesiapan Beta',sub:'Bukti, progres dan gerbang rilis M7-C',icon:'info'},
  {id:'users',title:'Pengguna & Role',sub:'Direktori, pencarian, dan hak akses',icon:'users'},
- {id:'job-listings',title:'Direktori Lowongan',sub:'Terbitkan lowongan dari tautan sumber resmi',icon:'briefcase'},
+ {id:'moderation',title:'Moderasi Lowongan',sub:'Tinjau pengajuan komunitas sebelum tayang',icon:'shield'},
+ {id:'job-listings',title:'Direktori Lowongan',sub:'Kelola lowongan terbit dan draft admin',icon:'briefcase'},
  {id:'audit',title:'Audit & Sistem',sub:'Riwayat tindakan dan keamanan admin',icon:'shield'},
  {id:'overview',title:'Laporan Operasional',sub:'Indikator anonim dari seluruh platform',icon:'file'},
  {id:'support',title:'Kotak Masuk Bantuan',sub:'Tinjau laporan pengguna dan beri tanggapan',icon:'shield'}
@@ -435,7 +436,7 @@ function settingsPage(){
   </div><aside class="ik-settings-aside">
    <div class="ik-settings-summary"><div class="ik-settings-userline"><div class="ik-settings-avatar">${escapeHTML(u.initials)}</div><div><strong>${escapeHTML(u.name)}</strong><small>${escapeHTML(u.email)}</small></div></div>
     <div class="ik-settings-summary-divider"></div><div class="ik-settings-summary-item"><span>Hak akses</span><strong>${isAdmin()?'Super Admin':'User'}</strong></div>
-    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.9.3</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
+    <div class="ik-settings-summary-item"><span>Versi</span><strong>v0.9.4</strong></div><div class="ik-settings-summary-item"><span>Status</span><strong>${STATE.demo?'Demo':'Akun aktif'}</strong></div></div>
    ${!adminView&&isAdmin()?`<button class="ik-settings-admin-link" data-action="nav-admin-settings">${icon('shield')} Buka Panel Super Admin ${icon('arrow-right')}</button>`:''}
    ${adminView?`<button class="ik-settings-admin-link" data-action="nav-settings">${icon('arrow-left')} Kembali ke Pengaturan Pribadi</button>`:''}
    <div class="ik-settings-hint"><strong>${icon('lock')} Privasi tetap utama</strong><p>Pengaturan pribadimu tidak memberikan akses ke data pengguna lain. Perubahan hak Super Admin hanya berlaku setelah diverifikasi oleh Supabase.</p></div>
@@ -448,7 +449,7 @@ function canSwitchAdminAccordion(nextId){
   if(!window.confirm('Catatan audit beta belum disimpan. Tutup bagian ini dan batalkan perubahan?'))return false;
   STATE.betaDrafts={};
  }
- if(STATE.adminSection==='job-listings'&&jobs.hasUnsaved()){
+ if(['job-listings','moderation'].includes(STATE.adminSection)&&jobs.hasUnsaved()){
   if(!window.confirm('Perubahan lowongan belum disimpan. Tutup bagian ini dan batalkan perubahan?'))return false;
   jobs.discard();
  }
@@ -476,7 +477,7 @@ function settingsCardContent(id){const u=userInfo();
   <div class="ik-setting-detail"><span class="ik-detail-label">Salinan data pribadi</span><p>Unduh salinan data yang tersimpan dalam modul Profil Karier, CV, Portofolio, Lowongan Tersimpan, dan Lamaran. Unduhan berupa JSON di perangkat Anda, bukan tautan publik.</p><button type="button" class="btn btn-outline" data-action="settings-export-data" ${STATE.demo||!STATE.session||STATE.dataExportBusy?'disabled':''}>${STATE.dataExportBusy?'Menyiapkan ekspor...':`${icon('file')} Unduh Data Saya (.json)`}</button><small class="ik-export-warning">File ekspor dapat berisi nomor telepon, pengalaman kerja, catatan lamaran, dan data sensitif. Simpan secara pribadi. Sesi login dan password tidak disertakan.</small></div>
   <div class="ik-info-line">${icon('lock')} Penghapusan akun mandiri belum tersedia. Ekspor hanya mencakup data modul IKHTIAR yang terdaftar, bukan log internal penyedia layanan.</div><button class="btn btn-outline" type="button" data-action="nav-trust">${icon('shield')} Buka Pusat Kepercayaan</button></div>`;
  if(id==='help')return `<div class="ik-setting-readonly"><p>Satu tempat untuk melaporkan masalah aplikasi, bantuan data, atau lowongan mencurigakan. Riwayat laporan tersimpan di akun yang sama.</p><button type="button" class="btn btn-primary" data-action="nav-support">${icon('shield')} Buka Pusat Bantuan</button><p class="ik-setting-fineprint">Saat ini perlu login. Kanal bantuan untuk pemulihan akun terkunci masih dalam persiapan.</p></div>`;
- if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.9.3 — UI Polish & Accordion Cleanup</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div><div class="ik-setting-detail"><span class="ik-detail-label">Informasi resmi dan privasi</span><p>Cara kerja IKHTIAR, informasi yang dipublikasikan, dan batasan fitur keamanan.</p><button class="btn btn-outline" type="button" data-action="nav-trust">${icon('shield')} Pusat Kepercayaan</button></div></div>`;
+ if(id==='about')return `<div class="ik-setting-readonly"><div class="ik-setting-detail"><span class="ik-detail-label">IKHTIAR — Your Career, Your Move.</span><p>Progressive Web App untuk membangun portofolio, menyiapkan CV ATS, dan mengelola perjalanan karier.</p></div><div class="ik-setting-detail"><span class="ik-detail-label">Rilis frontend</span><strong>v0.9.4 — UI Polish & Accordion Cleanup</strong></div><div class="ik-setting-detail"><span class="ik-detail-label">Pembaruan aplikasi</span><p>Periksa versi PWA terbaru tanpa menghapus Service Worker atau data browser.</p><button class="btn btn-outline" type="button" data-action="settings-check-update">${icon('settings')} Periksa Pembaruan</button></div><div class="ik-setting-detail"><span class="ik-detail-label">Informasi resmi dan privasi</span><p>Cara kerja IKHTIAR, informasi yang dipublikasikan, dan batasan fitur keamanan.</p><button class="btn btn-outline" type="button" data-action="nav-trust">${icon('shield')} Pusat Kepercayaan</button></div></div>`;
  return '';
 }
 function adminCardContent(id){
@@ -486,6 +487,7 @@ function adminCardContent(id){
   <div class="ik-setting-actions"><button type="submit" class="btn btn-primary" ${!STATE.platformReady||STATE.platformBusy?'disabled':''}>${STATE.platformBusy?'Menyimpan...':'Publikasikan Pengumuman'}</button></div></form>`;
  if(id==='users')return adminUsersContent();
  if(id==='audit')return adminAuditContent();
+ if(id==='moderation')return jobs.moderationPage();
  if(id==='job-listings')return jobs.adminPage();
  if(id==='overview')return adminOverviewContent();
  if(id==='support')return support.adminPage();
@@ -676,7 +678,7 @@ function trustPage(){
   <section class="ik-trust-section"><h2>Kontrol data & batasan yang terbuka</h2><ul><li>Data profil dan lamaran dapat diperbarui dari menu pemilik masing-masing.</li><li>Di Pengaturan → Privasi & Data, pengguna login dapat mengunduh salinan data modul dalam JSON.</li><li>Penghapusan akun mandiri, permintaan data dari penyedia eksternal, dan kebijakan retensi formal belum disediakan pada tahap ini.</li><li>Kanal bantuan untuk pengguna yang tidak bisa login, peninjauan kebijakan formal, dan uji keamanan produksi harus diselesaikan sebelum peluncuran publik.</li></ul></section>
   <section class="ik-trust-caution"><div>${icon('info')}</div><div><h2>Tips menghindari penipuan rekrutmen</h2><p>Verifikasi alamat perusahaan dan sumber lowongan. Jangan membagikan OTP, kata sandi, atau kode pemulihan kepada pihak yang mengaku sebagai admin atau perekrut. Untuk kasus mencurigakan, hentikan proses dan periksa melalui kanal resmi perusahaan.</p></div></section>
   <section class="ik-trust-section ik-trust-links"><h2>Dokumen & bantuan</h2><p>Dokumen privasi dan ketentuan berikut masih berbentuk draf. Konten harus ditinjau pengelola sebelum beta publik.</p><div class="ik-trust-link-actions"><button type="button" class="btn btn-outline" data-action="nav-privacy">Kebijakan Privasi (Draf)</button><button type="button" class="btn btn-outline" data-action="nav-terms">Ketentuan Layanan (Draf)</button><button type="button" class="btn btn-primary" data-action="nav-support">Pusat Bantuan</button></div></section>
-  <footer class="ik-trust-footer"><span>IKHTIAR · Your Career, Your Move. · v0.9.3</span><button type="button" data-action="trust-back">${backLabel} ${icon('arrow-right')}</button></footer></div>
+  <footer class="ik-trust-footer"><span>IKHTIAR · Your Career, Your Move. · v0.9.4</span><button type="button" data-action="trust-back">${backLabel} ${icon('arrow-right')}</button></footer></div>
  </main>`;
 }
 function legalPage(kind){
@@ -1029,7 +1031,7 @@ ROOT.addEventListener('click',async evt=>{
   const id=actionEl.dataset.section;
   if(ADMIN_CARDS.some(c=>c.id===id)){
    if(!canSwitchAdminAccordion(id))return;
-   STATE.adminSection=STATE.adminSection===id?'':id;render();if(STATE.adminSection==='users'&&!STATE.adminUsersLoaded)loadAdminUsers();if(STATE.adminSection==='audit'&&!STATE.adminAuditLoaded)loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();if(STATE.adminSection==='overview'&&!STATE.adminOverviewLoaded)loadAdminOverview();if(STATE.adminSection==='support')support.loadAdmin();if(STATE.adminSection==='readiness')loadBetaGate();}
+   STATE.adminSection=STATE.adminSection===id?'':id;render();if(STATE.adminSection==='users'&&!STATE.adminUsersLoaded)loadAdminUsers();if(STATE.adminSection==='audit'&&!STATE.adminAuditLoaded)loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();if(STATE.adminSection==='moderation')jobs.loadModeration();if(STATE.adminSection==='overview'&&!STATE.adminOverviewLoaded)loadAdminOverview();if(STATE.adminSection==='support')support.loadAdmin();if(STATE.adminSection==='readiness')loadBetaGate();}
  }
  if(action==='admin-refresh-users'&&isAdmin())await loadAdminUsers();
  if(action==='admin-refresh-audit'&&isAdmin())await loadAdminAudit();
@@ -1058,7 +1060,7 @@ ROOT.addEventListener('change',evt=>{captureBetaDraft(evt.target);jobs.onInput(e
 ROOT.addEventListener('submit',async evt=>{
  if(evt.target.matches('form[data-beta-id]')){evt.preventDefault();await saveBetaGate(evt.target);return;}
  if(['ik-help-form','ik-help-admin-form'].includes(evt.target.id)){evt.preventDefault();await support.handleSubmit(evt.target);return;}
- if(['jobs-search-form','jobs-manual-form','jobs-application-form','jobs-admin-form'].includes(evt.target.id)){evt.preventDefault();await jobs.handleSubmit(evt.target);return;}
+ if(['jobs-search-form','jobs-manual-form','jobs-application-form','jobs-admin-form','ik-community-form','ik-community-review-form'].includes(evt.target.id)){evt.preventDefault();await jobs.handleSubmit(evt.target);return;}
  if(['ik-portfolio-site-form','ik-portfolio-project-form'].includes(evt.target.id)){evt.preventDefault();await portfolio.handleSubmit(evt.target);return;}
  if(['career-form','cv-generate-form'].includes(evt.target.id)){evt.preventDefault();await career.handleSubmit(evt.target);return;}
  if(evt.target.id==='auth-form'){evt.preventDefault();await loginSubmit(evt.target);}
@@ -1092,7 +1094,7 @@ window.addEventListener('hashchange',()=>{
  if(['dashboard','settings','admin-settings','career','cv','portfolio','portfolio-preview','jobs','applications','support'].includes(requested)){
   if(!STATE.session&&!STATE.demo){go('auth');return;}
   if(requested==='admin-settings'&&!isAdmin()){go('settings');return;}
-  if(STATE.view!==requested){STATE.view=requested;render();if(['career','cv'].includes(requested))career.open(requested);if(['portfolio','portfolio-preview'].includes(requested))portfolio.openView(requested);if(['jobs','applications'].includes(requested))jobs.open(requested);if(requested==='support')support.loadOwn();if(requested==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();if(STATE.adminSection==='overview')loadAdminOverview();if(STATE.adminSection==='support')support.loadAdmin();if(STATE.adminSection==='readiness')loadBetaGate();}}
+  if(STATE.view!==requested){STATE.view=requested;render();if(['career','cv'].includes(requested))career.open(requested);if(['portfolio','portfolio-preview'].includes(requested))portfolio.openView(requested);if(['jobs','applications'].includes(requested))jobs.open(requested);if(requested==='support')support.loadOwn();if(requested==='admin-settings'){loadPlatformSettings();if(STATE.adminSection==='users')loadAdminUsers();if(STATE.adminSection==='audit')loadAdminAudit();if(STATE.adminSection==='job-listings')jobs.loadAdmin();if(STATE.adminSection==='moderation')jobs.loadModeration();if(STATE.adminSection==='overview')loadAdminOverview();if(STATE.adminSection==='support')support.loadAdmin();if(STATE.adminSection==='readiness')loadBetaGate();}}
  }else if(requested==='auth'&&!STATE.session&&STATE.view!=='auth'){STATE.view='auth';render();}
 });
 window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{
