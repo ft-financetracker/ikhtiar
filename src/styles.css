@@ -778,3 +778,222 @@ button.ik-cv-check-row:hover,button.ik-cv-check-row:focus-visible{border-color:#
 @media(max-width:760px){.ik-cv-check-grid{grid-template-columns:1fr}.ik-cv-readiness{padding:14px}.ik-cv-readiness-head h3{font-size:14px}.ik-cv-check-row{min-height:56px;padding:10px}.ik-cv-flow-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ik-cv-flow-card{min-height:114px;padding:11px}.ik-cv-flow-heading small{display:none}.ik-cv-return-banner{align-items:flex-start;flex-wrap:wrap}.ik-cv-return-banner button{margin-left:23px;padding-left:0}.ik-cv-validation{flex-wrap:wrap}.ik-cv-validation button{margin-left:27px}}
 @media(max-width:360px){.ik-cv-readiness-score{flex-basis:65px}.ik-cv-readiness-head p{font-size:10px}.ik-cv-flow-grid{gap:7px}.ik-cv-flow-card{padding:10px;min-height:116px}.ik-cv-flow-card small{font-size:8.5px}}
 @media(prefers-reduced-motion:reduce){.ik-cv-flow-card,.ik-cv-readiness-track span{transition:none}}
+
+/* ================================================================
+   IKHTIAR v1.0.0 — final workspace rhythm and product-release UI.
+   Non-document styles only: ATS/resume/creative print semantics untouched.
+   ================================================================ */
+:root{--ik-ui-radius:15px;--ik-ui-gap:12px}
+.dashboard-content{padding:24px clamp(18px,2.35vw,32px) 62px;max-width:1450px}
+.welcome{margin-bottom:14px;align-items:center}
+.welcome h1{font-size:clamp(19px,2.05vw,27px);line-height:1.3;overflow-wrap:anywhere;letter-spacing:-.045em;margin:0}
+.welcome p{line-height:1.6;margin:5px 0 0;font-size:11px}
+.ik-home-welcome-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ik-home-version{display:inline-flex;align-items:center;background:var(--soft);color:#2563eb;border:1px solid var(--line);border-radius:999px;padding:5px 10px;white-space:nowrap;font-size:9px;font-weight:800;letter-spacing:.025em}
+.dark .ik-home-version{color:#a8c9ff}
+.dashboard-grid{grid-template-columns:minmax(0,1.72fr) minmax(270px,.78fr);gap:14px}
+.main-stack,.aside-stack{gap:12px;min-width:0}
+.panel{padding:15px 16px;border-radius:var(--ik-ui-radius);box-shadow:0 4px 14px rgba(12,42,88,.025)}
+.panel-head{margin-bottom:10px}
+.panel-head h2{font-size:12px}
+.progress-panel{gap:13px;min-height:0;padding:14px 16px}
+.progress-circle{width:68px;height:68px;flex-basis:68px}
+.progress-circle:before{width:54px;height:54px;font-size:17px}
+.progress-copy h2{font-size:13px;margin:0 0 5px}
+.progress-copy p{font-size:10px;line-height:1.6}
+.progress-copy .text-btn{margin-top:6px}
+.stat-grid{gap:9px}
+.stat{padding:12px 13px;gap:6px;border-radius:12px}
+.stat-icon{width:34px;height:34px;border-radius:10px}.stat-icon .i{width:17px;height:17px}
+.stat strong{font-size:22px;line-height:1.25}.stat small{font-size:10px}
+.quick-grid{gap:9px}
+.quick-card{min-height:92px;padding:12px;display:grid;grid-template-columns:34px minmax(0,1fr);grid-template-rows:auto auto;align-content:center;column-gap:9px;row-gap:2px}
+.quick-card .stat-icon{grid-row:1 / span 2;margin:0;align-self:center}
+.quick-card strong{font-size:11px;align-self:end;line-height:1.4}
+.quick-card small{font-size:9px;line-height:1.4;margin:0;align-self:start}
+.profile-card{text-align:left;display:grid;grid-template-columns:48px minmax(0,1fr);gap:3px 11px;align-items:center}
+.profile-card .top-avatar{grid-row:1 / span 2;margin:0;width:46px;height:46px;font-size:17px}
+.profile-card h2{font-size:12px;margin:0;min-width:0;overflow-wrap:anywhere;line-height:1.3}
+.profile-card p{font-size:10px;margin:0;line-height:1.45;min-width:0;overflow-wrap:anywhere}
+.profile-card .btn{grid-column:1/-1;margin-top:10px;min-height:36px}
+.activity{padding:9px 0;gap:10px}
+.activity-icon{height:30px;width:30px}.activity strong{font-size:10px}
+.activity small{font-size:9px}
+.job-row{padding:10px 0;gap:10px}.job-logo{width:33px;height:33px;border-radius:10px;font-size:12px}
+.job-info strong{font-size:11px}.job-info small{font-size:9px}
+.notice-empty{padding:9px 0;font-size:11px;line-height:1.65}
+.ik-side-release{padding:13px!important;display:grid;gap:8px}
+.ik-side-release-tag{display:inline-flex;align-items:center;gap:7px;color:#81e5db;font-size:9px;letter-spacing:.08em;font-weight:800}
+.ik-side-release-tag .i{width:14px;height:14px}
+.ik-side-release strong{font-size:11px;line-height:1.45}
+.ik-side-release button{border:0;background:rgba(255,255,255,.1);color:#fff;padding:10px 11px;border-radius:9px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:10px;font-weight:800}
+.ik-side-release button .i{width:15px;height:15px}
+.ik-release-top-trigger{position:relative}
+.ik-release-top-trigger:after{content:"";width:5px;height:5px;position:absolute;top:6px;right:6px;background:#19ceb5;border-radius:50%}
+
+/* Three useful, fast, manually navigable onboarding cards on dashboard. */
+.ik-home-carousel{position:relative;border-radius:17px;overflow:hidden;background:#0d2855;color:#fff;border:1px solid rgba(62,121,194,.3);margin:0 0 12px;min-height:180px;isolation:isolate}
+.ik-home-carousel:focus-visible{outline:3px solid #71cde9;outline-offset:3px}
+.ik-home-slide{position:relative;min-height:139px;display:flex;align-items:center;padding:20px 24px 7px;overflow:hidden;isolation:isolate}
+.ik-home-slide[hidden]{display:none!important}
+.ik-home-slide:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 89% -20%,rgba(110,201,244,.22),transparent 48%);z-index:-2}
+.ik-home-slide-teal{background:linear-gradient(120deg,#0a2546,#105a73)}
+.ik-home-slide-violet{background:linear-gradient(120deg,#111f44,#3a3285)}
+.ik-home-slide-blue{background:linear-gradient(120deg,#0c2756,#1947a4)}
+.ik-home-slide-copy{max-width:min(660px,78%);position:relative;z-index:2}
+.ik-home-eyebrow{font-size:9px;letter-spacing:.13em;color:#9cfcdf;font-weight:800}
+.ik-home-slide h2{font-size:clamp(17px,2.25vw,24px);line-height:1.22;letter-spacing:-.04em;color:#fff;margin:7px 0 5px;font-weight:800}
+.ik-home-slide p{color:#d7e8ff;font-size:10.5px;line-height:1.58;margin:0;max-width:510px}
+.ik-home-cta{border:1px solid rgba(255,255,255,.4);color:#fff;background:rgba(255,255,255,.13);border-radius:9px;font-size:10px;font-weight:800;min-height:32px;padding:0 11px;margin:11px 0 0;display:inline-flex;align-items:center;gap:8px}
+.ik-home-cta:hover{background:rgba(255,255,255,.22)}.ik-home-cta .i{width:13px;height:13px}
+.ik-home-slide-graphic{position:absolute;right:5%;top:20px;display:grid;place-items:center;width:105px;height:105px;border:1px solid rgba(197,234,255,.25);border-radius:26px;transform:rotate(-12deg);box-shadow:0 0 0 19px rgba(140,234,229,.04),0 0 0 39px rgba(140,234,229,.04);opacity:.88}
+.ik-home-slide-graphic .i{width:52px;height:52px;stroke-width:1.1;transform:rotate(12deg);color:#acfff1}
+.ik-home-carousel-controls{display:flex;justify-content:space-between;align-items:center;padding:0 16px 10px 24px;min-height:29px}
+.ik-home-dots,.ik-home-arrows{display:flex;align-items:center;gap:7px}
+.ik-home-dots button{width:18px;height:5px;border:0;padding:0;border-radius:20px;background:rgba(255,255,255,.32);transition:width .18s,background .18s}
+.ik-home-dots button.active{width:29px;background:#65efdb}
+.ik-home-arrows button{width:29px;height:27px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1);color:#fff;border-radius:8px;display:grid;place-items:center}
+.ik-home-arrows button .i{width:15px;height:15px}
+.ik-home-arrows button:hover{background:rgba(255,255,255,.23)}
+
+/* Visible-but-dismissible release announcement. Bell replacement opens full notes. */
+.ik-release-strip{display:flex;gap:11px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);margin:0 0 12px;min-width:0}
+.ik-release-strip-icon{height:32px;width:32px;border-radius:10px;color:#2563eb;background:var(--surface);display:grid;place-items:center;flex:none}
+.ik-release-strip-icon .i{width:18px;height:18px}
+.ik-release-strip>div:nth-child(2){min-width:0;flex:1}
+.ik-release-strip strong{display:block;font-size:11px;color:var(--text);line-height:1.4}
+.ik-release-strip p{font-size:10px;margin:2px 0 0;color:var(--muted);line-height:1.45}
+.ik-release-strip-link{display:inline-flex;gap:5px;align-items:center;white-space:nowrap;border:0;background:transparent;color:#2563eb;font-size:10px;font-weight:800;padding:8px}
+.ik-release-strip-link .i{width:14px;height:14px}
+.ik-release-strip-close{height:28px;width:28px;display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);font-size:18px;flex:none}
+.ik-release-strip-close .i{width:14px;height:14px}
+.ik-release-backdrop{position:fixed;inset:0;background:rgba(5,13,30,.76);display:grid;place-items:center;z-index:100110;padding:16px;overscroll-behavior:contain}
+.ik-release-dialog{background:var(--surface);color:var(--text);border-radius:19px;border:1px solid var(--line);padding:24px;width:min(455px,100%);max-height:calc(100dvh - 35px);overflow-y:auto;scrollbar-width:none;box-shadow:0 23px 70px rgba(3,15,33,.35)}
+.ik-release-dialog::-webkit-scrollbar{display:none}
+.ik-release-dialog-head{display:flex;align-items:center;gap:10px;margin-bottom:15px}
+.ik-release-mark{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;background:var(--soft);color:#2563eb}
+.ik-release-version{font-size:10px;letter-spacing:.12em;color:#2873d4;font-weight:800;flex:1}
+.ik-release-close{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:9px;color:var(--muted)}
+.ik-release-dialog h2{font-size:20px;letter-spacing:-.035em;line-height:1.28;margin:0 0 7px}
+.ik-release-dialog>p{font-size:11px;line-height:1.65;color:var(--muted);margin:0 0 13px}
+.ik-release-list{display:grid;gap:9px;margin:16px 0}
+.ik-release-list>div{display:flex;gap:11px;padding:11px;border:1px solid var(--line);border-radius:11px;align-items:center;min-width:0}
+.ik-release-list>div>.i{width:18px;height:18px;color:#3081e2;flex:none}
+.ik-release-list span{min-width:0;display:grid;gap:3px}
+.ik-release-list strong{font-size:11px}
+.ik-release-list small{font-size:10px;color:var(--muted);line-height:1.5}
+.ik-release-dialog .ik-release-fineprint{font-size:10px;line-height:1.55;margin:0 0 14px}
+.ik-release-done{width:100%;min-height:42px}
+
+/* Gentle cohesion across other menus; inputs remain comfortably usable. */
+.dashboard-content :is(.ik-settings-heading,.ik-career-head,.ik-jobs-heading){margin-bottom:17px}
+.dashboard-content :is(.ik-setting-card,.ik-career-form,.ik-career-aside-card,.ik-jobs-editor,.ik-job-card,.ik-community-editor,.ik-community-item,.ik-cv-builder){box-shadow:0 5px 20px rgba(17,52,100,.025)}
+.dashboard-content :is(.ik-setting-card,.ik-job-card,.ik-community-item){border-radius:14px}
+.dashboard-content :is(.ik-jobs-stats,.ik-jobs-tabs,.ik-career-steps){margin-bottom:15px}
+.dashboard-content :is(.ik-community-item,.ik-job-card){min-width:0;overflow-wrap:anywhere}
+.dashboard-content :is(.ik-community-head,.ik-jobs-sectionbar,.ik-career-panel-head){gap:10px}
+.dashboard-content :is(.ik-career-hero){min-height:152px;padding:20px 23px;margin-bottom:17px;border-radius:17px}
+.dashboard-content :is(.ik-career-hero h2){font-size:clamp(22px,2.4vw,30px)}
+.dashboard-content :is(.ik-career-hero p){margin-bottom:10px}
+.dashboard-content :is(.ik-community-editor-heading,.ik-jobs-editor-title){margin-bottom:13px}
+.dark .ik-release-strip-link{color:#9dc9ff}
+.dark .ik-release-version{color:#8fbaff}
+@media(max-width:1100px){
+ .dashboard-grid{grid-template-columns:1fr}
+ .dashboard-content{padding:22px 22px 60px}
+ .aside-stack{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+}
+@media(max-width:760px){
+ .dashboard-content{padding:14px 13px 22px}
+ .welcome{margin-bottom:12px}.welcome h1{font-size:21px}.welcome p{font-size:10px}
+ .ik-home-version{font-size:8px;padding:5px 8px}
+ .ik-home-carousel{min-height:171px;margin-bottom:10px;border-radius:15px}
+ .ik-home-slide{min-height:137px;padding:15px 17px 5px}
+ .ik-home-slide-copy{max-width:88%}
+ .ik-home-slide h2{font-size:19px}
+ .ik-home-slide p{font-size:10px;max-width:290px}
+ .ik-home-slide-graphic{right:-20px;top:32px;width:88px;height:88px;opacity:.3}
+ .ik-home-slide-graphic .i{width:44px;height:44px}
+ .ik-home-carousel-controls{padding:0 13px 8px 17px}
+ .ik-release-strip{gap:9px;padding:10px;margin-bottom:10px;flex-wrap:wrap}
+ .ik-release-strip-icon{height:30px;width:30px}
+ .ik-release-strip>div:nth-child(2){flex-basis:calc(100% - 85px)}
+ .ik-release-strip-link{margin-left:39px;padding:5px 2px}
+ .ik-release-strip-close{margin-left:auto}
+ .main-stack,.aside-stack{gap:10px}
+ .panel{padding:13px 14px;border-radius:14px}
+ .progress-panel{padding:12px 13px}
+ .progress-circle{width:60px;height:60px;flex-basis:60px}
+ .progress-circle:before{width:48px;height:48px;font-size:15px}
+ .progress-copy p{font-size:10px}
+ .stat-grid{gap:7px}.stat{padding:11px 9px}.stat strong{font-size:21px}.stat small{font-size:9px}
+ .quick-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+ .quick-card{display:flex;min-height:106px;padding:11px 9px;align-items:flex-start;gap:6px}
+ .quick-card .stat-icon{width:30px;height:30px;margin:0;flex:none}
+ .quick-card strong{font-size:10px}.quick-card small{font-size:9px}
+ .aside-stack{grid-template-columns:1fr;margin-top:10px}
+ .dashboard-content :is(.ik-career-hero){min-height:148px;padding:17px 16px}
+}
+@media(max-width:375px){
+ .dashboard-content{padding-inline:10px}
+ .ik-home-slide h2{font-size:17px}
+ .ik-home-slide p{font-size:9.5px;line-height:1.5}
+ .ik-home-slide-graphic{display:none}
+ .ik-home-slide-copy{max-width:100%}
+ .quick-card{min-height:102px;padding:8px 7px}
+ .quick-card strong{font-size:9px}.quick-card small{font-size:8.5px}
+ .stat{padding:10px 8px}.stat strong{font-size:20px}
+ .ik-home-welcome-line{gap:6px}.welcome h1{font-size:19px}
+}
+@media(prefers-reduced-motion:reduce){
+ .ik-home-dots button,.ik-home-carousel *{animation:none!important;transition:none!important}
+}
+@media print{
+ .ik-home-carousel,.ik-release-strip,.ik-release-backdrop,.ik-release-dialog{display:none!important}
+}
+
+.ik-release-top-trigger.is-seen:after{display:none}
+.ik-release-close{font-size:19px;line-height:1}.ik-release-strip-close{font-size:19px;line-height:1}
+
+/* Compact touch-friendly secondary pages, consistent with dashboard spacing. */
+.dashboard-content .ik-career-aside-card{padding:16px;border-radius:15px}
+.dashboard-content .ik-jobs-stats>div{padding:12px 14px;border-radius:13px}
+.dashboard-content .ik-job-card{padding:15px;gap:10px;border-radius:14px}
+.dashboard-content .ik-jobs-empty{padding:24px 16px;gap:8px;border-radius:14px}
+.dashboard-content .ik-setting-toggle{padding:14px 15px;gap:11px}
+.dashboard-content .ik-setting-panel{padding-top:2px}
+.dashboard-content .ik-cv-type-card{min-height:127px;padding:12px;gap:6px;border-radius:13px}
+.dashboard-content .ik-community-promo{padding:11px 12px}
+.ik-trust-card{padding:20px;border-radius:17px}
+.dashboard-content :is(button,a,input,select,textarea,summary):focus-visible{outline:3px solid #4c9dff;outline-offset:2px}
+@media(max-width:760px){
+ .dashboard-content .ik-jobs-stats>div{padding:11px 10px}
+ .dashboard-content .ik-job-card{padding:13px;gap:10px}
+ .dashboard-content .ik-setting-toggle{padding:13px}
+ .dashboard-content .ik-career-aside-card{padding:14px}
+ .dashboard-content .ik-cv-type-card{min-height:0;padding:11px 12px}
+ .dashboard-content .ik-jobs-empty{padding:22px 14px}
+ .ik-trust-card{padding:17px}
+}
+
+/* Small yet readable: don't sacrifice legibility for density. */
+.ik-home-eyebrow{font-size:10px}
+.ik-home-slide p{font-size:11.5px}
+.ik-home-cta{font-size:11px}
+.quick-card small{font-size:10px}
+.stat small{font-size:10px}
+.ik-release-strip p{font-size:11px}
+.ik-release-strip-link{font-size:11px}
+.ik-release-dialog>p,.ik-release-list small{font-size:11px}
+@media(max-width:760px){
+ .ik-home-slide p{font-size:11px}
+ .quick-card small{font-size:10px}
+ .quick-card strong{font-size:10.5px}
+ .stat small{font-size:10px}
+ .ik-home-cta{font-size:11px}
+}
+@media(max-width:375px){
+ .ik-home-slide p{font-size:10.5px}
+ .quick-card small{font-size:9.5px}
+ .quick-card strong{font-size:10px}
+}

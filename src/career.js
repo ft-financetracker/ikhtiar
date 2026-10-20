@@ -1,4 +1,4 @@
-import {cvMarkup,cvPrintHTML,cvTypes,cvType as savedType,atsReadiness} from './cv-studio.js?v=0.9.7';
+import {cvMarkup,cvPrintHTML,cvTypes,cvType as savedType,atsReadiness} from './cv-studio.js?v=1.0.0';
 
 /* IKHTIAR v0.2.0 — one canonical Career Profile, reusable across company CVs.
  * No external AI, no invented experience, no public sharing. Supabase RLS owns access.
