@@ -704,3 +704,77 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,#app::-webkit-scrollbar,#app *::
 .ik-job-listing-detailbody h4{font-size:10px;letter-spacing:.045em;text-transform:uppercase;color:#3872d8;margin:0 0 6px}
 .ik-job-listing-detailbody p{font-size:11px;line-height:1.75;color:var(--text);white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
 @media(prefers-reduced-motion:reduce){.ik-job-listing-details summary>.i{transition:none}}
+
+/* CV Studio v0.9.7 — actionable readiness, concise field layout and guided workflow.
+   No layout impact outside CV Studio and targeted Career Profile. */
+.ik-cv-mini-label{display:block;color:#5178bd;font-size:9px;font-weight:800;letter-spacing:.11em;line-height:1.5}
+.dark .ik-cv-mini-label{color:#89b3ff}
+.ik-cv-readiness{margin:0 0 20px;padding:19px;border:1px solid color-mix(in srgb,var(--blue) 18%,var(--line));border-radius:15px;background:color-mix(in srgb,var(--soft) 52%,var(--surface));min-width:0}
+.ik-cv-readiness-head{display:flex;justify-content:space-between;align-items:center;gap:14px}
+.ik-cv-readiness-head>div:first-child{min-width:0}
+.ik-cv-readiness-head h3,.ik-cv-target-heading h3,.ik-cv-flow-heading h3{margin:5px 0;font-size:15px;line-height:1.45;color:var(--text);letter-spacing:-.025em}
+.ik-cv-readiness-head h3{display:flex;align-items:center;gap:7px}
+.ik-cv-readiness-head h3 .i{width:18px;height:18px;color:#188f9a}
+.ik-cv-readiness-head p,.ik-cv-target-heading p{margin:5px 0 0;font-size:11px;line-height:1.6;color:var(--muted)}
+.ik-cv-readiness-score{display:flex;align-items:center;justify-content:center;flex-direction:column;flex:0 0 75px;min-height:61px;border-radius:12px;border:1px solid color-mix(in srgb,var(--blue) 18%,var(--line));background:var(--surface)}
+.ik-cv-readiness-score strong{font-size:22px;letter-spacing:-.05em;line-height:1.2;color:var(--blue)}
+.ik-cv-readiness-score small{font-size:9px;color:var(--muted);font-weight:750}
+.ik-cv-readiness-track{height:6px;background:color-mix(in srgb,var(--blue) 10%,var(--surface));border-radius:99px;overflow:hidden;margin:17px 0 15px}
+.ik-cv-readiness-track span{display:block;height:100%;background:linear-gradient(90deg,#0da99c,#347cf5);border-radius:inherit;transition:width .2s ease}
+.ik-cv-check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.ik-cv-check-row{min-width:0;display:flex;align-items:center;gap:9px;padding:11px;min-height:62px;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:11px;text-align:left;font:inherit;text-decoration:none}
+button.ik-cv-check-row{cursor:pointer;transition:border-color .15s ease,background-color .15s ease}
+button.ik-cv-check-row:hover,button.ik-cv-check-row:focus-visible{border-color:#efad5b;background:color-mix(in srgb,#f6a74b 7%,var(--surface))}
+.ik-cv-check-mark{display:grid;place-items:center;flex:0 0 26px;width:26px;height:26px;background:color-mix(in srgb,#16a68d 12%,var(--surface));border-radius:8px;color:#0a977d}
+.is-missing .ik-cv-check-mark{background:color-mix(in srgb,#e99c35 13%,var(--surface));color:#b77a25}
+.ik-cv-check-mark .i{width:15px;height:15px}
+.ik-cv-check-row>div{flex:1;min-width:0}
+.ik-cv-check-row strong{font-size:11px;line-height:1.45;font-weight:800;display:block;overflow-wrap:anywhere}
+.ik-cv-check-row small{font-size:9.5px;color:var(--muted);line-height:1.6;display:block;margin-top:3px}
+.ik-cv-check-row.is-missing strong{color:color-mix(in srgb,#bb771c 76%,var(--text))}
+.ik-cv-check-row>.i{height:13px;width:13px;transform:rotate(-90deg);color:var(--muted);flex:none}
+.ik-cv-optional{display:inline-block;margin-left:4px;font-size:9px;font-weight:650;color:var(--muted)}
+.ik-cv-readiness-foot{margin-top:12px;display:flex;align-items:flex-start;gap:7px;font-size:10px;color:var(--muted);line-height:1.65}
+.ik-cv-readiness-foot .i{width:15px;height:15px;flex:0 0 15px;margin-top:1px;color:var(--blue)}
+.ik-cv-target-form{border-top:1px solid var(--line);padding-top:20px;margin-top:2px}
+.ik-cv-target-heading{margin:0 0 15px}
+.ik-cv-target-form .ik-career-fields{gap:14px 13px}
+.ik-cv-target-form .ik-career-field>span{font-size:11px}
+.ik-cv-target-form .ik-career-field input,.ik-cv-target-form .ik-career-field textarea{padding:11px 13px;font-size:12px;border-radius:10px}
+.ik-cv-target-form .ik-career-field textarea{min-height:75px;max-height:180px}
+.ik-cv-inline-optional{font-size:9px;color:var(--muted);font-weight:500;margin-left:5px}
+.ik-cv-create-footer{display:flex;align-items:center;justify-content:space-between;gap:13px;margin-top:21px;padding:15px;border-radius:13px;border:1px solid var(--line);background:color-mix(in srgb,var(--soft) 32%,var(--surface))}
+.ik-cv-create-footer>div{min-width:0;flex:1}
+.ik-cv-create-footer strong{display:block;font-size:11px;line-height:1.5;color:var(--text)}
+.ik-cv-create-footer small{display:block;color:var(--muted);font-size:10px;line-height:1.65;margin-top:4px}
+.ik-cv-create-footer .ik-cv-generate{flex:0 1 auto;min-width:195px;max-width:320px;grid-column:auto;white-space:normal;text-align:center;line-height:1.5;min-height:44px;padding:10px 14px}
+.ik-cv-validation{display:flex;align-items:flex-start;gap:10px;background:color-mix(in srgb,#e9a23d 10%,var(--surface));border:1px solid color-mix(in srgb,#e9a23d 39%,var(--line));color:var(--text);border-radius:11px;padding:13px;margin-top:15px}
+.ik-cv-validation>.i{color:#c08a35;width:17px;height:17px;flex:none}
+.ik-cv-validation div{flex:1;min-width:0}
+.ik-cv-validation strong{display:block;font-size:11px}
+.ik-cv-validation p{font-size:10px;color:var(--muted);line-height:1.65;margin:4px 0 0}
+.ik-cv-validation button{background:transparent;border:0;font-size:10px;color:var(--blue);font-weight:800;padding:1px 0;white-space:normal;display:flex;gap:5px;align-items:center}
+.ik-cv-validation button .i{width:13px;height:13px}
+.ik-cv-flow{border-top:1px solid var(--line);margin-top:20px;padding-top:19px}
+.ik-cv-flow-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:12px}
+.ik-cv-flow-heading small{color:var(--muted);font-size:10px}
+.ik-cv-flow-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.ik-cv-flow-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);padding:12px;min-height:128px;transition:border .15s,transform .15s}
+.ik-cv-flow-card:hover{border-color:#84acf6;transform:translateY(-1px)}
+.ik-cv-flow-index{display:grid;place-items:center;width:28px;height:28px;border:1px solid color-mix(in srgb,var(--blue) 22%,var(--line));border-radius:9px;background:var(--soft);color:var(--blue);font-size:10px;font-weight:850}
+.ik-cv-flow-card strong{font-size:11px;line-height:1.4;letter-spacing:-.01em}
+.ik-cv-flow-card small{color:var(--muted);font-size:9px;line-height:1.55;padding-right:10px}
+.ik-cv-flow-card>.i{position:absolute;right:11px;bottom:11px;width:13px;height:13px;color:var(--blue)}
+.ik-cv-return-banner{display:flex;gap:10px;align-items:center;min-width:0;border:1px solid color-mix(in srgb,var(--blue) 25%,var(--line));border-radius:12px;padding:13px 14px;margin-bottom:13px;background:color-mix(in srgb,var(--blue) 7%,var(--surface))}
+.ik-cv-return-banner>.i{width:18px;height:18px;flex:none;color:var(--blue)}
+.ik-cv-return-banner>div{flex:1;min-width:0}
+.ik-cv-return-banner strong,.ik-cv-return-banner small{display:block;line-height:1.5}
+.ik-cv-return-banner strong{font-size:11px}.ik-cv-return-banner small{font-size:10px;color:var(--muted);margin-top:3px}
+.ik-cv-return-banner button{display:flex;gap:6px;align-items:center;background:transparent;border:0;color:var(--blue);font-size:10px;font-weight:800;padding:7px;white-space:nowrap}
+.ik-cv-return-banner button .i{height:13px;width:13px}
+.ik-cv-target-highlight{outline:2px solid #2c7ce9;outline-offset:5px;border-radius:8px;scroll-margin-top:130px}
+#ik-cv-format,#ik-cv-preview,#cv-generate-form{scroll-margin-top:110px}
+@media(max-width:1100px){.ik-cv-create-footer{flex-direction:column;align-items:stretch}.ik-cv-create-footer .ik-cv-generate{width:100%;max-width:none;min-width:0}}
+@media(max-width:760px){.ik-cv-check-grid{grid-template-columns:1fr}.ik-cv-readiness{padding:14px}.ik-cv-readiness-head h3{font-size:14px}.ik-cv-check-row{min-height:56px;padding:10px}.ik-cv-flow-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ik-cv-flow-card{min-height:114px;padding:11px}.ik-cv-flow-heading small{display:none}.ik-cv-return-banner{align-items:flex-start;flex-wrap:wrap}.ik-cv-return-banner button{margin-left:23px;padding-left:0}.ik-cv-validation{flex-wrap:wrap}.ik-cv-validation button{margin-left:27px}}
+@media(max-width:360px){.ik-cv-readiness-score{flex-basis:65px}.ik-cv-readiness-head p{font-size:10px}.ik-cv-flow-grid{gap:7px}.ik-cv-flow-card{padding:10px;min-height:116px}.ik-cv-flow-card small{font-size:8.5px}}
+@media(prefers-reduced-motion:reduce){.ik-cv-flow-card,.ik-cv-readiness-track span{transition:none}}

@@ -1,7 +1,7 @@
-/* IKHTIAR PWA v0.9.6 — network-first for app shell, safe offline fallback. */
-const CACHE='ikhtiar-app-v0.9.6';
+/* IKHTIAR PWA v0.9.7 — network-first for app shell, safe offline fallback. */
+const CACHE='ikhtiar-app-v0.9.7';
 const BASE=new URL('./',self.registration.scope);
-const CORE=['./','./index.html','./src/styles.css?v=0.9.6','./src/app.js?v=0.9.6','./src/career.js?v=0.9.6','./src/cv-studio.js?v=0.9.6','./src/portfolio.js?v=0.9.6','./src/jobs.js?v=0.9.6','./src/community-jobs.js?v=0.9.6','./src/support.js?v=0.9.6','./manifest.webmanifest','./assets/brand/logo-mark.png','./assets/brand/icon-192.png','./assets/brand/icon-512.png'].map(p=>new URL(p,BASE).toString());
+const CORE=['./','./index.html','./src/styles.css?v=0.9.7','./src/app.js?v=0.9.7','./src/career.js?v=0.9.7','./src/cv-studio.js?v=0.9.7','./src/portfolio.js?v=0.9.7','./src/jobs.js?v=0.9.7','./src/community-jobs.js?v=0.9.7','./src/support.js?v=0.9.7','./manifest.webmanifest','./assets/brand/logo-mark.png','./assets/brand/icon-192.png','./assets/brand/icon-512.png'].map(p=>new URL(p,BASE).toString());
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)));});
 self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting();});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('ikhtiar-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
