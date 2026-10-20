@@ -1,4 +1,4 @@
-import { createCommunityJobsModule } from './community-jobs.js?v=0.9.6';
+import { createCommunityJobsModule } from './community-jobs.js?v=1.0.0';
 /* IKHTIAR M6 v0.5.0 — Job Explorer, private bookmarks, and application tracker.
  * No scraping and no fictitious opportunities: directory rows originate from Super Admin.
  * RLS enforces ownership and admin write permission server-side.
