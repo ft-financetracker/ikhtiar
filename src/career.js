@@ -1,4 +1,4 @@
-import {cvMarkup,cvPrintHTML,cvTypes,cvType as savedType,atsReadiness} from './cv-studio.js?v=0.9.6';
+import {cvMarkup,cvPrintHTML,cvTypes,cvType as savedType,atsReadiness} from './cv-studio.js?v=0.9.7';
 
 /* IKHTIAR v0.2.0 — one canonical Career Profile, reusable across company CVs.
  * No external AI, no invented experience, no public sharing. Supabase RLS owns access.
@@ -7,7 +7,7 @@ export function createCareerModule({state,render,toast,go,icon,escapeHTML,getUse
  const E=escapeHTML;
  const plain=()=>({full_name:'',headline:'',target_role:'',city:'',phone:'',linkedin_url:'',website_url:'',summary:'',skills:'',languages:'',certifications:[],projects:[],education:[],experience:[]});
  let profile=plain(), draft=plain(), saved=false, loaded=false, loading=false, error='', dirty=false, step=0, extrasOpen=false, saving=false, request=0;
- let versions=[],cvLoaded=false,cvBusy=false,cvError='',cvCompany='',cvPosition='',cvKeywords='',cvFormat='ats',currentCV=null,cvSaving=false;
+ let versions=[],cvLoaded=false,cvBusy=false,cvError='',cvCompany='',cvPosition='',cvKeywords='',cvFormat='ats',currentCV=null,cvSaving=false,cvValidation='',returnFromCV=false;
  let cvShares={},shareBusy=false,shareError='';
  let publicCV=null,publicBusy=false,publicError='',publicToken='',publicRequest=0;
  const me=()=>state.session?.user?.id;
@@ -42,7 +42,7 @@ export function createCareerModule({state,render,toast,go,icon,escapeHTML,getUse
    projects:sanitiseExtra(p.projects,'projects').filter(x=>x.title.trim())
   };
  }
- function clear(){request++;profile=plain();draft=plain();saved=false;loaded=false;loading=false;error='';dirty=false;step=0;extrasOpen=false;saving=false;versions=[];cvLoaded=false;cvBusy=false;cvError='';cvCompany='';cvPosition='';cvKeywords='';cvFormat='ats';currentCV=null;cvSaving=false;cvShares={};shareBusy=false;shareError='';publicCV=null;publicBusy=false;publicError='';publicToken='';publicRequest++;state.careerProfile=null;}
+ function clear(){request++;profile=plain();draft=plain();saved=false;loaded=false;loading=false;error='';dirty=false;step=0;extrasOpen=false;saving=false;versions=[];cvLoaded=false;cvBusy=false;cvError='';cvCompany='';cvPosition='';cvKeywords='';cvFormat='ats';currentCV=null;cvSaving=false;cvValidation='';returnFromCV=false;cvShares={};shareBusy=false;shareError='';publicCV=null;publicBusy=false;publicError='';publicToken='';publicRequest++;state.careerProfile=null;}
  function fallbackName(){const u=state.session?.user;return String(u?.user_metadata?.full_name||u?.user_metadata?.name||u?.email?.split('@')[0]||'').trim().slice(0,80);}
  async function load(){
   if(!usable()||loading||loaded)return;
@@ -69,12 +69,13 @@ export function createCareerModule({state,render,toast,go,icon,escapeHTML,getUse
   catch(e){if(id===me()){cvError='Riwayat CV belum dapat dibuka. Periksa migrasi SQL v0.2.0.';console.warn('IKHTIAR CV:',e?.message||e);}}
   finally{cvBusy=false;if(id===me()&&state.view==='cv')render();}
  }
- function prepareCV(company,position){cvCompany=String(company||'').trim().slice(0,120);cvPosition=String(position||'').trim().slice(0,120);cvKeywords='';cvFormat='ats';currentCV=null;}
+ function prepareCV(company,position){cvCompany=String(company||'').trim().slice(0,120);cvPosition=String(position||'').trim().slice(0,120);cvKeywords='';cvFormat='ats';currentCV=null;cvValidation='';}
  function open(view){if(!loaded&&!loading)load();if(view==='cv'&&!cvLoaded&&!cvBusy)loadVersions();if(view==='cv'&&!cvPosition&&profile.target_role)cvPosition=profile.target_role;}
  function progress(p=profile){
-  // Optional links, phone, and work history should not penalize fresh graduates.
-  const x=pack(p);const essentials=[x.full_name,x.target_role,x.city,x.summary,x.skills.length,(x.education.length||x.experience.length)];
-  return Math.round(essentials.filter(Boolean).length/essentials.length*100);
+  // Keep dashboard/profile readiness consistent with the six mandatory ATS checks.
+  // Achievement detail remains recommended, and fresh graduates may use education instead of employment.
+  const checks=atsReadiness(pack(p),state.session?.user?.email||'').checks.filter(c=>c.critical);
+  return Math.round(checks.filter(c=>c.ok).length/checks.length*100);
  }
  const status=()=>({loaded,saved,error,dirty,progress:progress(profile),name:state.careerProfile?.full_name||''});
  function f(label,name,value,{placeholder='',type='text',max=120,required=false,help='',wide=false}={}){
@@ -102,7 +103,7 @@ export function createCareerModule({state,render,toast,go,icon,escapeHTML,getUse
   if(error)return `<section class="ik-career-page"><div class="ik-career-head"><h1>Profil Karier</h1></div><div class="ik-career-notice error">${E(error)} <button type="button" class="btn btn-outline" data-action="career-retry">Coba lagi</button></div></section>`;
   if(!loaded)return `<section class="ik-career-page"><div class="ik-career-head"><h1>Profil Karier</h1><p>Sedang memuat data aman dari Supabase...</p></div><div class="ik-career-loading"></div></section>`;
   const pct=progress(profile);
-  return `<section class="ik-career-page"><div class="ik-career-head"><div><span class="ik-career-eyebrow">IKHTIAR / PROFIL UTAMA</span><h1>Satu profil, banyak peluang.</h1><p>Lengkapi data di sini saja. Saat melamar perusahaan lain, kamu tidak perlu mengisi ulang.</p></div><button type="button" class="ik-career-link" data-action="nav-cv">Buat CV ${icon('arrow-right')}</button></div><div class="ik-career-hero"><div><span class="ik-career-hero-label">PROFIL KARIER KAMU</span><h2>${E(draft.full_name||getUser().name)}</h2><p>${E(draft.target_role||'Tentukan posisi tujuanmu untuk memulai.')}</p><span class="ik-career-herochip">${icon('shield')} Pribadi · hanya pemilik akun</span></div><div class="ik-career-progress" style="--p:${pct}%"><strong>${pct}%</strong><small>Kesiapan</small></div></div><div class="ik-career-layout"><div class="ik-career-main"><div class="ik-career-steps" role="tablist" aria-label="Bagian Profil Karier">${[['Identitas','user'],['Keahlian','sparkles'],['Riwayat','briefcase']].map(([label,ic],i)=>`<button type="button" class="ik-career-step ${step===i?'active':''}" role="tab" aria-selected="${step===i}" data-action="career-step" data-step="${i}"><span>${icon(ic)}</span><strong>${label}</strong></button>`).join('')}</div><form id="career-form" class="ik-career-form" novalidate>${steps()}<div class="ik-career-footer"><span class="ik-career-save-status" id="ik-career-save-status">${dirty?'Ada perubahan yang belum disimpan':saved?'Tersimpan di akunmu':'Belum ada profil tersimpan'}</span><div class="ik-career-footer-actions">${step>0?`<button type="button" class="btn btn-outline" data-action="career-prev">Kembali</button>`:''}${step<2?`<button type="button" class="btn btn-outline" data-action="career-next">Lanjut ${icon('arrow-right')}</button>`:''}<button type="submit" class="btn btn-primary" ${saving?'disabled':''}>${saving?'Menyimpan...':`${icon('shield')} Simpan Profil`}</button></div></div></form></div><aside class="ik-career-aside"><div class="ik-career-aside-card"><span class="ik-career-aside-icon">${icon('file')}</span><h3>Isi sekali. Gunakan berkali-kali.</h3><p>Nama, kontak, keahlian, dan riwayat akan menjadi sumber data untuk setiap CV.</p><button type="button" data-action="nav-cv">Generate CV khusus perusahaan ${icon('arrow-right')}</button></div><div class="ik-career-aside-note"><strong>${icon('info')} Tanpa data buatan</strong><p>IKHTIAR tidak membuat pengalaman atau sertifikasi palsu. Kamu tetap meninjau hasil sebelum melamar.</p></div></aside></div></section>`;
+  return `<section class="ik-career-page"><div class="ik-career-head"><div><span class="ik-career-eyebrow">IKHTIAR / PROFIL UTAMA</span><h1>Satu profil, banyak peluang.</h1><p>Lengkapi data di sini saja. Saat melamar perusahaan lain, kamu tidak perlu mengisi ulang.</p></div><button type="button" class="ik-career-link" data-action="nav-cv">Buat CV ${icon('arrow-right')}</button></div><div class="ik-career-hero"><div><span class="ik-career-hero-label">PROFIL KARIER KAMU</span><h2>${E(draft.full_name||getUser().name)}</h2><p>${E(draft.target_role||'Tentukan posisi tujuanmu untuk memulai.')}</p><span class="ik-career-herochip">${icon('shield')} Pribadi · hanya pemilik akun</span></div><div class="ik-career-progress" style="--p:${pct}%"><strong>${pct}%</strong><small>Kesiapan</small></div></div><div class="ik-career-layout"><div class="ik-career-main">${returnFromCV?`<div class="ik-cv-return-banner">${icon('info')} <div><strong>Melengkapi CV dari Profil Karier</strong><small>Isi bagian yang dituju, lalu tekan <b>Simpan Profil</b> sebelum kembali ke CV Studio.</small></div><button type="button" data-action="cv-back-to-studio">Kembali ke CV ${icon('arrow-right')}</button></div>`:''}<div class="ik-career-steps" role="tablist" aria-label="Bagian Profil Karier">${[['Identitas','user'],['Keahlian','sparkles'],['Riwayat','briefcase']].map(([label,ic],i)=>`<button type="button" class="ik-career-step ${step===i?'active':''}" role="tab" aria-selected="${step===i}" data-action="career-step" data-step="${i}"><span>${icon(ic)}</span><strong>${label}</strong></button>`).join('')}</div><form id="career-form" class="ik-career-form" novalidate>${steps()}<div class="ik-career-footer"><span class="ik-career-save-status" id="ik-career-save-status">${dirty?'Ada perubahan yang belum disimpan':saved?'Tersimpan di akunmu':'Belum ada profil tersimpan'}</span><div class="ik-career-footer-actions">${step>0?`<button type="button" class="btn btn-outline" data-action="career-prev">Kembali</button>`:''}${step<2?`<button type="button" class="btn btn-outline" data-action="career-next">Lanjut ${icon('arrow-right')}</button>`:''}<button type="submit" class="btn btn-primary" ${saving?'disabled':''}>${saving?'Menyimpan...':`${icon('shield')} Simpan Profil`}</button></div></div></form></div><aside class="ik-career-aside"><div class="ik-career-aside-card"><span class="ik-career-aside-icon">${icon('file')}</span><h3>Isi sekali. Gunakan berkali-kali.</h3><p>Nama, kontak, keahlian, dan riwayat akan menjadi sumber data untuk setiap CV.</p><button type="button" data-action="nav-cv">Generate CV khusus perusahaan ${icon('arrow-right')}</button></div><div class="ik-career-aside-note"><strong>${icon('info')} Tanpa data buatan</strong><p>IKHTIAR tidak membuat pengalaman atau sertifikasi palsu. Kamu tetap meninjau hasil sebelum melamar.</p></div></aside></div></section>`;
  }
  function syncForm(){
   const form=document.getElementById('career-form');if(!form)return;
@@ -154,15 +155,44 @@ export function createCareerModule({state,render,toast,go,icon,escapeHTML,getUse
   if(!usable())return `<section class="ik-career-page"><div class="ik-career-head"><h1>CV Studio</h1><p>Masuk untuk membuat CV profesional dari profil kamu.</p></div></section>`;
   const ready=saved&&!!state.careerProfile?.full_name&&!!state.careerProfile?.target_role;
   const quality=atsReadiness(state.careerProfile||{},state.session?.user?.email||'');
+  const essential=quality.checks.filter(c=>c.critical);
+  const essentialOK=essential.filter(c=>c.ok).length;
+  const missing=essential.filter(c=>!c.ok);
+  const canMake=ready&&(cvFormat!=='ats'||quality.ready);
+  const fieldTips={
+   name:'Isi nama lengkap di bagian Identitas.',
+   role:'Tentukan posisi tujuan di bagian Identitas.',
+   contact:'Tambahkan nomor HP aktif di Identitas, atau gunakan email akun.',
+   summary:'Tulis ringkasan profesional minimal 40 karakter.',
+   skills:'Masukkan setidaknya dua keahlian yang benar-benar dikuasai.',
+   history:'Tambahkan satu pengalaman kerja/organisasi atau pendidikan.',
+   achievement:'Jelaskan tanggung jawab atau hasil nyata minimal 25 karakter.'
+  };
   const opts=Object.entries(cvTypes).map(([type,item])=>`<button class="ik-cv-type-card ${cvFormat===type?'is-selected':''}" type="button" data-action="cv-template" data-type="${type}" aria-pressed="${cvFormat===type}"><span class="ik-cv-type-symbol">${type==='ats'?icon('file'):type==='resume'?icon('bookmark'):icon('sparkles')}</span><strong>${item.title}</strong><small>${item.hint}</small><span class="ik-cv-type-indicator">${cvFormat===type?'Dipilih':'Pilih format'}</span></button>`).join('');
-  return `<section class="ik-career-page"><div class="ik-career-head"><div><span class="ik-career-eyebrow">IKHTIAR / CV STUDIO</span><h1>Satu profil. Tiga format CV.</h1><p>Pilih format, sesuaikan perusahaan, lalu tinjau sebelum mengunduh. Informasi tetap dari profil asli.</p></div><button type="button" class="ik-career-link" data-action="nav-career">${icon('user')} Kelola Profil Karier</button></div>
-  <div class="ik-cv-layout"><div class="ik-career-main"><div class="ik-cv-builder"><div class="ik-cv-top"><span class="ik-career-aside-icon">${icon('file')}</span><div><h2>CV Studio</h2><p>Tentukan gaya dokumen yang paling sesuai dengan kebutuhan lamaran.</p></div></div>
-  <div class="ik-cv-type-choices" role="group" aria-label="Pilih format dokumen">${opts}</div>
-  <div class="ik-cv-ats-check"><div class="ik-cv-ats-heading"><strong>${icon('shield')} Kesiapan data CV</strong><span>${quality.score}%</span></div><div class="ik-cv-ats-check-grid">${quality.checks.map(c=>`<span class="${c.ok?'is-ready':'is-missing'}">${c.ok?'✓':'○'} ${E(c.label)}</span>`).join('')}</div><p>${quality.ready?'Data inti tersedia. Tetap periksa kesesuaian isi dengan lowongan.':'Lengkapi data bertanda belum terpenuhi di Profil Karier. CV ATS memerlukan ringkasan, keahlian, serta riwayat yang dapat dipahami perekrut.'}</p>${!quality.ready?`<button type="button" class="ik-cv-quality-link" data-action="nav-career">Lengkapi Profil Karier →</button>`:''}</div>
-  ${error?`<div class="ik-career-notice error">${E(error)}</div>`:!loaded?`<div class="ik-career-notice">Sedang menyiapkan Profil Karier...</div>`:!ready?`<div class="ik-career-notice">Simpan minimal nama dan posisi tujuan di Profil Karier. <button type="button" data-action="nav-career">Isi Profil →</button></div>`:''}
-  <form id="cv-generate-form" class="ik-career-fields"><label class="ik-career-field wide"><span>Nama perusahaan <em>*</em></span><input name="company" value="${E(cvCompany)}" maxlength="120" placeholder="Contoh: PT Nusantara Teknologi" required ${!ready?'disabled':''}></label><label class="ik-career-field wide"><span>Posisi dilamar <em>*</em></span><input name="position" value="${E(cvPosition||profile.target_role)}" maxlength="120" placeholder="Mengikuti posisi di profil" required ${!ready?'disabled':''}></label><label class="ik-career-field wide"><span>Kata kunci lowongan (opsional)</span><textarea name="keywords" maxlength="500" rows="2" placeholder="Excel, laporan keuangan, komunikasi" ${!ready?'disabled':''}>${E(cvKeywords)}</textarea><small>Hanya mengurutkan keahlian yang sudah kamu punya. Tidak menambah fakta atau klaim buatan.</small></label><button class="btn btn-primary ik-cv-generate" type="submit" ${!ready||cvSaving||(cvFormat==='ats'&&!quality.ready)?'disabled':''}>${cvSaving?'Menyimpan...':`${icon('sparkles')} Buat & Simpan ${cvTypes[cvFormat].title}`}</button></form></div>
-  ${currentCV?`<section class="ik-cv-result"><div class="ik-cv-result-bar"><div><strong>Pratinjau ${cvTypes[savedType(currentCV)].title}</strong><small>${E(currentCV.company_name)} · ${E(currentCV.position_name)}</small></div><button type="button" class="btn btn-primary" data-action="cv-print">${icon('file')} Cetak / Simpan PDF</button></div>${cvMarkup(currentCV)}<p class="ik-cv-output-note">Gunakan Save as PDF dengan ukuran A4 dan skala 100%. Untuk ATS, pilih PDF berbasis teks, bukan gambar atau hasil screenshot.</p></section>${shareControl()}`:''}</div>
-  <aside class="ik-career-aside"><div class="ik-career-aside-card"><h3>${icon('folder')} Riwayat CV</h3><p>Versi per perusahaan tetap tersimpan. Jenis format juga disimpan bersama isi CV, jadi CV lama tidak berubah ketika profil diedit.</p>${cvError?`<p class="ik-cv-error">${E(cvError)}</p>`:''}${cvBusy?`<p>Memuat riwayat...</p>`:versions.length?`<div class="ik-cv-history">${versions.map(v=>`<div class="ik-cv-history-row ${currentCV?.id===v.id?'ik-cv-row-selected':''}"><div><strong>${E(v.company_name)}</strong><small>${E(v.position_name)}</small><small class="ik-cv-mini-status">${cvTypes[savedType(v)].title} · ${cvShares[v.id]?.is_active?'● Tautan aktif':'○ Privat'}</small></div><button type="button" data-action="cv-open" data-id="${E(v.id)}">Buka</button><button type="button" class="ik-cv-delete" aria-label="Hapus CV untuk ${E(v.company_name)}" data-action="cv-delete" data-id="${E(v.id)}">×</button></div>`).join('')}</div>`:`<p class="ik-cv-empty">Belum ada CV. Buat versi pertama untuk perusahaan tujuan.</p>`}</div><div class="ik-career-aside-note"><strong>${icon('shield')} ATS bukan jaminan diterima</strong><p>Template ATS memakai struktur teks linear dan font standar. Setiap sistem rekrutmen berbeda; selalu periksa PDF dan cocokkan isinya dengan lowongan.</p></div></aside></div></section>`;
+  const readinessRows=quality.checks.map(c=>c.ok
+   ?`<div class="ik-cv-check-row is-ready"><span class="ik-cv-check-mark">${icon('check')}</span><div><strong>${E(c.label)}</strong><small>Sudah lengkap</small></div></div>`
+   :`<button type="button" class="ik-cv-check-row is-missing" data-action="cv-fix" data-check="${c.id}" aria-label="Lengkapi ${E(c.label)} di Profil Karier"><span class="ik-cv-check-mark">${icon('arrow-right')}</span><div><strong>${E(c.label)} ${!c.critical?'<span class="ik-cv-optional">disarankan</span>':''}</strong><small>${E(fieldTips[c.id]||'Lengkapi bagian ini di Profil Karier.')}</small></div>${icon('chevron-down')}</button>`).join('');
+  const guide=[['01','Pilih format','ATS, Resume, atau Kreatif','choose'],['02','Lengkapi profil','Periksa data wajib CV','profile'],['03','Isi tujuan','Perusahaan dan posisi dilamar','target'],['04','Tinjau & unduh','Pratinjau, lalu simpan PDF','preview']].map(([num,title,description,action])=>`<button type="button" class="ik-cv-flow-card" data-action="cv-guide" data-guide="${action}"><span class="ik-cv-flow-index">${num}</span><strong>${title}</strong><small>${description}</small>${icon('arrow-right')}</button>`).join('');
+  return `<section class="ik-career-page"><div class="ik-career-head"><div><span class="ik-career-eyebrow">IKHTIAR / CV STUDIO</span><h1>Satu profil. Tiga format CV.</h1><p>Lengkapi profil sekali, pilih jenis dokumen, lalu buat CV sesuai perusahaan tujuan.</p></div><button type="button" class="ik-career-link" data-action="nav-career">${icon('user')} Profil Karier</button></div>
+  <div class="ik-cv-layout"><div class="ik-career-main"><div class="ik-cv-builder"><div class="ik-cv-top"><span class="ik-career-aside-icon">${icon('file')}</span><div><h2>Buat CV Baru</h2><p>Pilih format yang sesuai sebelum melengkapi tujuan lamaran.</p></div></div>
+  <div id="ik-cv-format" class="ik-cv-type-choices" role="group" aria-label="Pilih format dokumen">${opts}</div>
+  <section class="ik-cv-readiness" id="ik-cv-readiness" aria-label="Kesiapan data CV">
+   <div class="ik-cv-readiness-head"><div><span class="ik-cv-mini-label">LANGKAH 02 / KELENGKAPAN DATA</span><h3>${icon('shield')} ${cvFormat==='ats'?'Kesiapan CV ATS':'Kelengkapan Profil Karier'}</h3><p>Ketuk poin yang kurang untuk langsung menuju kolomnya.</p></div><div class="ik-cv-readiness-score"><strong>${essentialOK}/${essential.length}</strong><small>data wajib</small></div></div>
+   <div class="ik-cv-readiness-track" role="progressbar" aria-valuemin="0" aria-valuemax="${essential.length}" aria-valuenow="${essentialOK}" aria-label="Data wajib terisi"><span style="width:${Math.round(100*essentialOK/essential.length)}%"></span></div>
+   <div class="ik-cv-check-grid">${readinessRows}</div>
+   <div class="ik-cv-readiness-foot">${missing.length?`${icon('info')} ${missing.length} data wajib belum lengkap. ${cvFormat==='ats'?'Lengkapi agar CV ATS dapat dibuat.':'Format ini bisa dibuat dari data profil dasar, tetapi hasilnya akan lebih baik jika dilengkapi.'}`:`${icon('check')} Semua data inti sudah lengkap. Periksa lagi isi CV sebelum digunakan.`}</div>
+  </section>
+  ${error?`<div class="ik-career-notice error">${E(error)}</div>`:!loaded?`<div class="ik-career-notice">Sedang menyiapkan Profil Karier...</div>`:!ready?`<div class="ik-career-notice">Simpan minimal nama dan posisi tujuan di Profil Karier. <button type="button" data-action="cv-fix" data-check="${!profile.full_name?'name':'role'}">Isi Profil →</button></div>`:''}
+  <form id="cv-generate-form" class="ik-cv-target-form" novalidate>
+    <div class="ik-cv-target-heading"><div><span class="ik-cv-mini-label">LANGKAH 03 / TUJUAN LAMARAN</span><h3>Sesuaikan untuk perusahaan</h3><p>Informasi ini hanya berlaku untuk versi CV yang sedang dibuat.</p></div></div>
+    <div class="ik-career-fields"><label class="ik-career-field"><span>Nama perusahaan <em>*</em></span><input name="company" value="${E(cvCompany)}" maxlength="120" placeholder="Contoh: PT Maju Berkah" autocomplete="organization"></label><label class="ik-career-field"><span>Posisi dilamar <em>*</em></span><input name="position" value="${E(cvPosition||profile.target_role)}" maxlength="120" placeholder="Contoh: Finance Staff"></label><label class="ik-career-field wide"><span>Kata kunci lowongan <small class="ik-cv-inline-optional">Opsional</small></span><textarea name="keywords" maxlength="500" rows="2" placeholder="Contoh: Excel, laporan keuangan, administrasi">${E(cvKeywords)}</textarea><small>Hanya mengurutkan keahlian yang sudah ada dalam profil. Tidak menambahkan pengalaman atau kemampuan fiktif.</small></label></div>
+    ${cvValidation?`<div class="ik-cv-validation" id="ik-cv-validation" role="alert">${icon('info')} <div><strong>CV belum dapat dibuat</strong><p>${E(cvValidation)}</p></div>${!quality.ready&&/^(\d+ data wajib ATS|Simpan terlebih dahulu Profil|Profil belum siap)/.test(cvValidation)?`<button type="button" data-action="cv-fix" data-check="${(missing[0]||quality.checks.find(c=>!c.ok))?.id||'name'}">Lengkapi sekarang ${icon('arrow-right')}</button>`:''}</div>`:''}
+    <div class="ik-cv-create-footer"><div><strong>${cvSaving?'Menyimpan CV...':!canMake&&cvFormat==='ats'?'Lengkapi data wajib untuk CV ATS':'Siap membuat versi CV'}</strong><small>${cvFormat==='ats'&&!quality.ready?'Tombol tetap bisa ditekan untuk melihat yang kurang. CV tidak disimpan sebelum memenuhi syarat inti.':'Simpan versi baru, tinjau hasilnya, lalu cetak atau unduh PDF.'}</small></div><button class="btn btn-primary ik-cv-generate" type="submit" ${cvSaving||!loaded?'disabled':''}>${cvSaving?'Menyimpan...':`${icon('sparkles')} Buat & Simpan ${cvTypes[cvFormat].title}`}</button></div>
+  </form>
+  <section class="ik-cv-flow" aria-labelledby="ik-cv-flow-title"><div class="ik-cv-flow-heading"><div><span class="ik-cv-mini-label">PANDUAN SINGKAT</span><h3 id="ik-cv-flow-title">4 langkah membuat CV</h3></div><small>Klik setiap langkah untuk mulai</small></div><div class="ik-cv-flow-grid">${guide}</div></section>
+  </div>
+  ${currentCV?`<section class="ik-cv-result" id="ik-cv-preview"><div class="ik-cv-result-bar"><div><strong>Pratinjau ${cvTypes[savedType(currentCV)].title}</strong><small>${E(currentCV.company_name)} · ${E(currentCV.position_name)}</small></div><button type="button" class="btn btn-primary" data-action="cv-print">${icon('file')} Cetak / Simpan PDF</button></div>${cvMarkup(currentCV)}<p class="ik-cv-output-note">Gunakan Save as PDF ukuran A4 dan skala 100%. Untuk ATS, pilih PDF berbasis teks, bukan gambar.</p></section>${shareControl()}`:''}</div>
+  <aside class="ik-career-aside"><div class="ik-career-aside-card"><h3>${icon('folder')} Riwayat CV</h3><p>Versi per perusahaan tetap tersimpan. Jenis format dan isi CV tidak berubah ketika Profil Karier diedit.</p>${cvError?`<p class="ik-cv-error">${E(cvError)}</p>`:''}${cvBusy?`<p>Memuat riwayat...</p>`:versions.length?`<div class="ik-cv-history">${versions.map(v=>`<div class="ik-cv-history-row ${currentCV?.id===v.id?'ik-cv-row-selected':''}"><div><strong>${E(v.company_name)}</strong><small>${E(v.position_name)}</small><small class="ik-cv-mini-status">${cvTypes[savedType(v)].title} · ${cvShares[v.id]?.is_active?'● Tautan aktif':'○ Privat'}</small></div><button type="button" data-action="cv-open" data-id="${E(v.id)}">Buka</button><button type="button" class="ik-cv-delete" aria-label="Hapus CV untuk ${E(v.company_name)}" data-action="cv-delete" data-id="${E(v.id)}">×</button></div>`).join('')}</div>`:`<p class="ik-cv-empty">Belum ada CV. Buat versi pertama untuk perusahaan tujuan.</p>`}</div><div class="ik-career-aside-note"><strong>${icon('shield')} ATS bukan jaminan diterima</strong><p>Template ATS menggunakan struktur teks linear dan font standar. Selalu periksa PDF, lalu sesuaikan isi dengan persyaratan lowongan.</p></div></aside></div></section>`;
  }
 
  async function openPublic(token){
@@ -212,14 +242,15 @@ export function createCareerModule({state,render,toast,go,icon,escapeHTML,getUse
  }
 
  async function generate(form){
-  if(!usable()||cvSaving||!loaded||!saved){toast('Simpan Profil Karier dahulu.');return;}
+  if(!usable()||cvSaving||!loaded)return;
+  if(!saved||!state.careerProfile){cvValidation='Simpan terlebih dahulu Profil Karier. Tekan salah satu poin data wajib di atas untuk menuju form yang sesuai.';render();return;}
   const fd=new FormData(form),company=String(fd.get('company')||'').trim().slice(0,120),position=String(fd.get('position')||'').trim().slice(0,120)||profile.target_role,keywords=String(fd.get('keywords')||'').trim().slice(0,500);
   cvCompany=company;cvPosition=position;cvKeywords=keywords;
-  if(company.length<2||position.length<2){toast('Isi nama perusahaan dan posisi tujuan.');return;}
-  const snap=snapshot();if(!snap){toast('Profil belum siap. Simpan profil dahulu.');return;}
+  if(company.length<2||position.length<2){cvValidation=company.length<2?'Isi nama perusahaan tujuan minimal 2 karakter.':'Isi posisi yang ingin dilamar minimal 2 karakter.';render();requestAnimationFrame(()=>{const el=document.querySelector(`#cv-generate-form [name="${company.length<2?'company':'position'}"]`);el?.focus();el?.scrollIntoView({block:'center',behavior:'smooth'});});return;}
+  const snap=snapshot();if(!snap){cvValidation='Profil belum siap. Simpan Profil Karier lebih dahulu.';render();return;}
   const quality=atsReadiness(snap,state.session?.user?.email||'');
-  if(cvFormat==='ats'&&!quality.ready){toast('Lengkapi data inti Profil Karier sebelum membuat CV ATS.');return;}
-  snap.cv_design={type:cvFormat,version:'0.9.6'};
+  if(cvFormat==='ats'&&!quality.ready){const lacks=quality.checks.filter(c=>c.critical&&!c.ok);cvValidation=`${lacks.length} data wajib ATS belum lengkap: ${lacks.map(c=>c.label).join(', ')}. Ketuk salah satu poin berwarna oranye di atas agar langsung menuju kolom pengisian.`;render();document.getElementById('ik-cv-validation')?.scrollIntoView({block:'center',behavior:'smooth'});return;}
+  cvValidation='';snap.cv_design={type:cvFormat,version:'0.9.7'};
   const payload={user_id:me(),company_name:company,position_name:position,job_keywords:keywords,profile_snapshot:snap};
   cvSaving=true;render();const id=me();
   try{
@@ -242,10 +273,39 @@ export function createCareerModule({state,render,toast,go,icon,escapeHTML,getUse
   win.document.open();win.document.write(cvPrintHTML(cv));win.document.close();win.focus();win.setTimeout(()=>win.print(),400);
  }
 
+ async function jumpToCVField(id){
+  const index={name:0,role:0,contact:0,summary:1,skills:1,history:2,achievement:2};
+  if(!Object.prototype.hasOwnProperty.call(index,id))id='name';
+  step=index[id];returnFromCV=true;
+  await go('career');
+  if(state.view!=='career')return;
+  // Focus the actual field, rather than dropping users at the top of an unrelated form.
+  requestAnimationFrame(()=>{
+   const form=document.getElementById('career-form');if(!form)return;
+   const exp=draft.experience||[],edu=draft.education||[];
+   const expIndex=exp.findIndex(x=>x.title&&x.company);
+   let name=({name:'full_name',role:'target_role',contact:'phone',summary:'summary',skills:'skills'})[id]||'';
+   if(id==='history')name=expIndex>=0?`experience:${expIndex}:title`:edu.length?'education:0:school':'';
+   if(id==='achievement'){
+    const needsExp=exp.findIndex(x=>String(x.description||'').trim().length<25);
+    const needsEdu=edu.findIndex(x=>String(x.description||'').trim().length<25);
+    name=needsExp>=0?`experience:${needsExp}:description`:needsEdu>=0?`education:${needsEdu}:description`:exp.length?'experience:0:description':edu.length?'education:0:description':'';
+   }
+   const field=name?Array.from(form.querySelectorAll('[name]')).find(x=>x.name===name):null;
+   const focusTarget=field||form.querySelector('[data-action="career-add"][data-type="education"]');
+   const surround=focusTarget?.closest('.ik-career-field,.ik-career-repeat-item')||focusTarget;
+   surround?.classList.add('ik-cv-target-highlight');
+   focusTarget?.focus({preventScroll:true});surround?.scrollIntoView({block:'center',behavior:'smooth'});
+  });
+ }
+ function scrollCVTarget(selector){requestAnimationFrame(()=>{const el=document.querySelector(selector);el?.scrollIntoView({behavior:'smooth',block:'start'});if(el?.matches('input,textarea,button'))el.focus({preventScroll:true});});}
  async function handleClick(action,el){
   if(action==='career-extras-toggle'){extrasOpen=!extrasOpen;return true;}
   if(action==='career-retry'){error='';loaded=false;await load();return true;}
-  if(action==='nav-career'){go('career');return true;}
+  if(action==='cv-fix'){await jumpToCVField(el.dataset.check||'name');return true;}
+  if(action==='cv-back-to-studio'){if(dirty){toast('Simpan Profil Karier dahulu sebelum kembali ke CV Studio.');document.getElementById('career-form')?.querySelector('[type=submit]')?.focus();return true;}returnFromCV=false;await go('cv');return true;}
+  if(action==='cv-guide'){const guide=el.dataset.guide;if(guide==='profile'){const miss=atsReadiness(state.careerProfile||{},state.session?.user?.email||'').checks.find(x=>x.critical&&!x.ok);await jumpToCVField(miss?.id||'summary');}else if(guide==='choose')scrollCVTarget('#ik-cv-format');else if(guide==='target')scrollCVTarget('#cv-generate-form [name=company]');else if(guide==='preview'){if(currentCV)scrollCVTarget('#ik-cv-preview');else{cvValidation='Buat dan simpan CV terlebih dahulu agar pratinjau muncul. Ikuti langkah 01–03 di atas.';render();scrollCVTarget('#cv-generate-form');}}return true;}
+  if(action==='nav-career'){returnFromCV=false;go('career');return true;}
   if(action==='nav-cv'){go('cv');return true;}
   if(action==='career-step'||action==='career-next'||action==='career-prev'){
    syncForm();const next=action==='career-step'?Number(el.dataset.step):step+(action==='career-next'?1:-1);step=Math.min(2,Math.max(0,next));render();return true;
@@ -256,7 +316,7 @@ export function createCareerModule({state,render,toast,go,icon,escapeHTML,getUse
    if(action==='career-remove'){const idx=Number(el.dataset.index);if(Number.isInteger(idx)&&idx>=0&&idx<list.length)list.splice(idx,1);}
    dirty=true;render();return true;
   }
-  if(action==='cv-template'){const type=el.dataset.type;if(cvTypes[type]){cvFormat=type;render();}return true;}
+  if(action==='cv-template'){const type=el.dataset.type;if(cvTypes[type]){cvFormat=type;cvValidation='';render();}return true;}
   if(action==='cv-open'){const v=versions.find(x=>x.id===el.dataset.id);if(v){currentCV=v;cvFormat=savedType(v);shareError='';render();}return true;}
   if(action==='cv-delete'){await removeVersion(el.dataset.id);return true;}
   if(action==='cv-print'){print();return true;}
